@@ -15,28 +15,20 @@ struct ContentView: View {
             .navigationTitle("What's In The Box?")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                            Button { showingAddSpace = true } label: {
-                                Label("New Unit / Space", systemImage: "door.left.hand.open")
+                    if manager.selectedLocation != nil {
+                        Menu {
+                            Button { showingLocationDetail = true } label: {
+                                Label("Location Info", systemImage: "info.circle")
                             }
-                            .disabled(manager.selectedLocation == nil)
-                            Button { showingAddLocation = true } label: {
-                                Label("New Location", systemImage: "building.2")
-                            }
-                            if manager.selectedLocation != nil {
-                                Divider()
-                                Button { showingLocationDetail = true } label: {
-                                    Label("Location Info", systemImage: "info.circle")
-                                }
-                                Button(role: .destructive) { confirmDeleteLocation = true } label: {
-                                    Label("Delete Location", systemImage: "trash")
-                                }
+                            Button(role: .destructive) { confirmDeleteLocation = true } label: {
+                                Label("Delete Location", systemImage: "trash")
                             }
                         } label: {
-                            Image(systemName: "plus")
+                            Image(systemName: "ellipsis.circle")
                         }
                     }
                 }
+            }
             .sheet(isPresented: $showingAddLocation) { AddLocationView() }
             .sheet(isPresented: $showingAddSpace) { AddSpaceView() }
             .sheet(isPresented: $showingLocationDetail) {
