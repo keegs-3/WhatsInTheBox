@@ -30,43 +30,39 @@ struct ItemListView: View {
     }
 }
 
-// MARK: - Item Card (HomeKit-style tile)
-
 struct ItemCard: View {
-    let item: StorageItem
+    let item: Item
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Color strip + icon
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(hex: item.colorHex) ?? .brown)
+                        .fill(Color(hex: item.colorHex ?? "#8B6914") ?? .brown)
                         .frame(width: 36, height: 36)
-                    if item.category == .box {
-                        Text("#\(item.boxNumber)")
+                    if let num = item.boxNumber {
+                        Text("#\(num)")
                             .font(.caption2.bold())
                             .foregroundStyle(.white)
                     } else {
-                        Image(systemName: iconFor(item.category))
+                        Image(systemName: item.icon ?? item.category.iconName)
                             .font(.caption)
                             .foregroundStyle(.white)
                     }
                 }
                 Spacer()
-                if item.stackable {
+                if item.stackable == true {
                     Image(systemName: "square.stack.3d.up")
                         .font(.caption2)
                         .foregroundStyle(.green)
                 }
             }
 
-            Text(item.label)
+            Text(item.name)
                 .font(.caption.bold())
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
 
-            // Weight badge
             if let w = item.weight {
                 Label("\(String(format: "%.0f", w)) lbs", systemImage: "scalemass")
                     .font(.caption2)
@@ -75,10 +71,9 @@ struct ItemCard: View {
 
             Spacer(minLength: 0)
 
-            // Fullness bar (boxes only)
-            if item.category == .box {
+            if item.isContainer {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(item.fullnessPercent)% full")
+                    Text("\(item.fullnessPct ?? 0)% full")
                         .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                     GeometryReader { geo in
@@ -87,8 +82,8 @@ struct ItemCard: View {
                                 .fill(Color(.systemGray5))
                                 .frame(height: 4)
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(fullnessColor(item.fullnessPercent))
-                                .frame(width: geo.size.width * CGFloat(item.fullnessPercent) / 100, height: 4)
+                                .fill(fullnessColor(item.fullnessPct ?? 0))
+                                .frame(width: geo.size.width * CGFloat(item.fullnessPct ?? 0) / 100, height: 4)
                         }
                     }
                     .frame(height: 4)
@@ -100,15 +95,6 @@ struct ItemCard: View {
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private func iconFor(_ category: ItemCategory) -> String {
-        switch category {
-        case .box: return "shippingbox"
-        case .furniture: return "cabinet"
-        case .appliance: return "washer"
-        case .misc: return "archivebox"
-        }
-    }
-
     private func fullnessColor(_ percent: Int) -> Color {
         if percent < 50 { return .green }
         if percent < 80 { return .yellow }
@@ -116,19 +102,14 @@ struct ItemCard: View {
     }
 }
 
-// MARK: - Color hex helper
-
 extension Color {
     init?(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
         guard hexSanitized.count == 6 else { return nil }
         var rgb: UInt64 = 0
         Scanner(string: hexSanitized).scanHexInt64(&rgb)
-        self.init(
-            red: Double((rgb & 0xFF0000) >> 16) / 255.0,
-            green: Double((rgb & 0x00FF00) >> 8) / 255.0,
-            blue: Double(rgb & 0x0000FF) / 255.0
-        )
+        self.init(red: Double((rgb & 0xFF0000) >> 16) / 255.0,
+                  green: Double((rgb & 0x00FF00) >> 8) / 255.0,
+                  blue: Double(rgb & 0x0000FF) / 255.0)
     }
 }

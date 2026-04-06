@@ -5,7 +5,7 @@ struct SpaceDetailView: View {
     let space: StorageSpace
 
     @State private var showingAddItem = false
-    @State private var selectedItem: StorageItem?
+    @State private var selectedItem: Item?
     @State private var showScene = true
 
     var body: some View {
@@ -40,7 +40,7 @@ struct SpaceDetailView: View {
 
             Spacer(minLength: 0)
         }
-        .navigationTitle(space.name)
+        .navigationTitle(space.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -60,14 +60,14 @@ struct SpaceDetailView: View {
 }
 
 struct ItemInfoPanel: View {
-    let item: StorageItem
+    let item: Item
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label(
-                    item.category == .box ? "Box #\(item.boxNumber)" : item.label,
-                    systemImage: item.category == .box ? "shippingbox.fill" : "cabinet.fill"
+                    item.isContainer ? (item.boxNumber.map { "Box #\($0)" } ?? item.name) : item.name,
+                    systemImage: item.isContainer ? "shippingbox.fill" : (item.icon ?? "cube")
                 )
                 .font(.headline)
                 Spacer()
@@ -77,30 +77,27 @@ struct ItemInfoPanel: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            if item.category == .box {
-                Text(item.label)
+            if item.isContainer {
+                Text(item.name)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             HStack(spacing: 12) {
-                Text("\(String(format: "%.0f", item.width))×\(String(format: "%.0f", item.depth))×\(String(format: "%.0f", item.height))\"")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                if item.stackable {
+                if let w = item.width, let d = item.depth, let h = item.height {
+                    Text("\(String(format: "%.0f", w))×\(String(format: "%.0f", d))×\(String(format: "%.0f", h))\"")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                if item.stackable == true {
                     Label("Stackable", systemImage: "square.stack.3d.up")
                         .font(.caption)
                         .foregroundStyle(.green)
                 }
-                Text(item.category.rawValue.capitalized)
+                Text(item.category.displayName)
                     .font(.caption)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(.fill, in: Capsule())
-            }
-            if let notes = item.notes, !notes.isEmpty {
-                Text(notes)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .padding()

@@ -4,7 +4,56 @@ import SceneKit
 // MARK: - Enums
 
 enum ItemCategory: String, Codable, CaseIterable {
-    case box, furniture, appliance, misc
+    case box, tote, furniture, appliance, item, misc
+
+    var displayName: String {
+        switch self {
+        case .box: return "Box"
+        case .tote: return "Tote"
+        case .furniture: return "Furniture"
+        case .appliance: return "Appliance"
+        case .item: return "Item"
+        case .misc: return "Misc"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .box: return "shippingbox"
+        case .tote: return "archivebox"
+        case .furniture: return "cabinet"
+        case .appliance: return "washer"
+        case .item: return "cube.box"
+        case .misc: return "ellipsis.circle"
+        }
+    }
+
+    var isContainer: Bool {
+        switch self {
+        case .box, .tote: return true
+        default: return false
+        }
+    }
+}
+
+enum WrappingMaterial: String, Codable, CaseIterable {
+    case bubbleWrap = "bubble_wrap"
+    case foamSheet = "foam_sheet"
+    case packingPaper = "packing_paper"
+    case newspaper
+    case clothTowel = "cloth_towel"
+    case none
+
+    var displayName: String {
+        switch self {
+        case .bubbleWrap: return "Bubble Wrap"
+        case .foamSheet: return "Foam Sheet"
+        case .packingPaper: return "Packing Paper"
+        case .newspaper: return "Newspaper"
+        case .clothTowel: return "Cloth/Towel"
+        case .none: return "None"
+        }
+    }
 }
 
 enum LocationType: String, Codable, CaseIterable {
@@ -289,132 +338,168 @@ struct ShapeData: Codable {
     }
 }
 
-// MARK: - Storage Item (placed in a space — was "StorageBox")
+// MARK: - Item (unified — containers, contents, inventory)
 
-struct StorageItem: Identifiable, Codable {
+struct Item: Identifiable, Codable {
     let id: UUID
-    var spaceId: UUID
-    var itemTypeId: UUID?
-    var boxNumber: Int
-    var label: String
+    var familyId: UUID?
+
+    // Hierarchy
+    var spaceId: UUID?       // set for top-level items placed in a 3D space
+    var parentId: UUID?      // set when nested inside another item
+
+    // Identity
+    var name: String
+    var description: String?
+    var icon: String?        // SF Symbol name
     var category: ItemCategory
-    var weight: Float?       // lbs (total with contents)
-    var width: Float         // inches (override or from type)
-    var height: Float        // inches
-    var depth: Float         // inches
-    var posX: Float          // position in space (feet)
-    var posY: Float
-    var posZ: Float
-    var rotationY: Float     // rotation around Y axis (radians)
-    var colorHex: String
-    var stackable: Bool
-    var stackedOn: UUID?     // id of item this is stacked on
-    var notes: String?
-    var productUrl: String?
+    var itemTypeId: UUID?
+
+    // Physical (all optional for simple items)
+    var width: Float?        // inches
+    var height: Float?       // inches
+    var depth: Float?        // inches
+    var weight: Float?       // lbs (own weight, not including contents)
+    var quantity: Int
+
+    // Container fields
+    var isContainer: Bool
+    var colorHex: String?
+    var fullnessPct: Int?
+    var boxNumber: Int?
+    var stackable: Bool?
+    var stackedOn: UUID?
+
+    // 3D placement (only when spaceId is set)
+    var posX: Float?
+    var posY: Float?
+    var posZ: Float?
+    var rotationY: Float?
+
+    // Shape
     var shapeHint: String?
     var shapeData: ShapeData?
-    var fullnessPercent: Int
+    var productUrl: String?
+
+    // Item properties
+    var isBreakable: Bool?
+    var isWrapped: Bool?
+    var wrappingMaterial: String?
+
+    var notes: String?
     var createdAt: Date
 
     init(
         id: UUID = UUID(),
-        spaceId: UUID,
+        familyId: UUID? = nil,
+        spaceId: UUID? = nil,
+        parentId: UUID? = nil,
+        name: String,
+        description: String? = nil,
+        icon: String? = nil,
+        category: ItemCategory = .item,
         itemTypeId: UUID? = nil,
-        boxNumber: Int,
-        label: String,
-        category: ItemCategory = .box,
+        width: Float? = nil,
+        height: Float? = nil,
+        depth: Float? = nil,
         weight: Float? = nil,
-        width: Float = 18,
-        height: Float = 18,
-        depth: Float = 16,
-        posX: Float = 0,
-        posY: Float = 0,
-        posZ: Float = 0,
-        rotationY: Float = 0,
-        colorHex: String = "#8B6914",
-        stackable: Bool = false,
+        quantity: Int = 1,
+        isContainer: Bool = false,
+        colorHex: String? = "#8B6914",
+        fullnessPct: Int? = 0,
+        boxNumber: Int? = nil,
+        stackable: Bool? = false,
         stackedOn: UUID? = nil,
-        notes: String? = nil,
-        productUrl: String? = nil,
+        posX: Float? = nil,
+        posY: Float? = nil,
+        posZ: Float? = nil,
+        rotationY: Float? = nil,
         shapeHint: String? = "box",
         shapeData: ShapeData? = nil,
-        fullnessPercent: Int = 0
+        productUrl: String? = nil,
+        isBreakable: Bool? = false,
+        isWrapped: Bool? = false,
+        wrappingMaterial: String? = nil,
+        notes: String? = nil
     ) {
         self.id = id
+        self.familyId = familyId
         self.spaceId = spaceId
-        self.itemTypeId = itemTypeId
-        self.boxNumber = boxNumber
-        self.label = label
+        self.parentId = parentId
+        self.name = name
+        self.description = description
+        self.icon = icon
         self.category = category
-        self.weight = weight
+        self.itemTypeId = itemTypeId
         self.width = width
         self.height = height
         self.depth = depth
+        self.weight = weight
+        self.quantity = quantity
+        self.isContainer = isContainer
+        self.colorHex = colorHex
+        self.fullnessPct = fullnessPct
+        self.boxNumber = boxNumber
+        self.stackable = stackable
+        self.stackedOn = stackedOn
         self.posX = posX
         self.posY = posY
         self.posZ = posZ
         self.rotationY = rotationY
-        self.colorHex = colorHex
-        self.stackable = stackable
-        self.stackedOn = stackedOn
-        self.notes = notes
-        self.productUrl = productUrl
         self.shapeHint = shapeHint
         self.shapeData = shapeData
-        self.fullnessPercent = fullnessPercent
+        self.productUrl = productUrl
+        self.isBreakable = isBreakable
+        self.isWrapped = isWrapped
+        self.wrappingMaterial = wrappingMaterial
+        self.notes = notes
         self.createdAt = Date()
     }
 
-    /// Dimensions in feet for 3D rendering
-    var widthFeet: Float { width / 12.0 }
-    var heightFeet: Float { height / 12.0 }
-    var depthFeet: Float { depth / 12.0 }
+    // MARK: - Computed
+
+    var widthFeet: Float { (width ?? 18) / 12.0 }
+    var heightFeet: Float { (height ?? 18) / 12.0 }
+    var depthFeet: Float { (depth ?? 16) / 12.0 }
+
+    var isPlaced: Bool { spaceId != nil }
+    var isNested: Bool { parentId != nil }
+    var isUnassigned: Bool { spaceId == nil && parentId == nil }
+
+    var volumeCubicInches: Float? {
+        guard let w = width, let h = height, let d = depth else { return nil }
+        return w * h * d
+    }
+
+    var displayName: String {
+        if let num = boxNumber, (category == .box || category == .tote) {
+            return name.isEmpty ? "#\(num)" : name
+        }
+        return name
+    }
 
     enum CodingKeys: String, CodingKey {
-        case id
+        case id, name, description, icon, category, width, height, depth, weight, quantity, notes
+        case familyId = "family_id"
         case spaceId = "space_id"
+        case parentId = "parent_id"
         case itemTypeId = "item_type_id"
+        case isContainer = "is_container"
+        case colorHex = "color_hex"
+        case fullnessPct = "fullness_pct"
         case boxNumber = "box_number"
-        case label, category, weight, width, height, depth
+        case stackable
+        case stackedOn = "stacked_on"
         case posX = "pos_x"
         case posY = "pos_y"
         case posZ = "pos_z"
         case rotationY = "rotation_y"
-        case colorHex = "color_hex"
-        case stackable
-        case stackedOn = "stacked_on"
-        case notes
-        case productUrl = "product_url"
         case shapeHint = "shape_hint"
         case shapeData = "shape_data"
-        case fullnessPercent = "fullness_percent"
-        case createdAt = "created_at"
-    }
-}
-
-// MARK: - Box Item (contents of a box/container)
-
-struct BoxItem: Identifiable, Codable {
-    let id: UUID
-    var boxId: UUID
-    var name: String
-    var quantity: Int
-    var notes: String?
-    var createdAt: Date
-
-    init(id: UUID = UUID(), boxId: UUID, name: String, quantity: Int = 1, notes: String? = nil) {
-        self.id = id
-        self.boxId = boxId
-        self.name = name
-        self.quantity = quantity
-        self.notes = notes
-        self.createdAt = Date()
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case boxId = "box_id"
-        case name, quantity, notes
+        case productUrl = "product_url"
+        case isBreakable = "is_breakable"
+        case isWrapped = "is_wrapped"
+        case wrappingMaterial = "wrapping_material"
         case createdAt = "created_at"
     }
 }

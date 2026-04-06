@@ -3,8 +3,8 @@ import SceneKit
 
 struct StorageSceneView: UIViewRepresentable {
     let space: StorageSpace
-    let items: [StorageItem]
-    @Binding var selectedItem: StorageItem?
+    let items: [Item]
+    @Binding var selectedItem: Item?
 
     func makeUIView(context: Context) -> SCNView {
         let scnView = SCNView()
@@ -16,22 +16,17 @@ struct StorageSceneView: UIViewRepresentable {
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         scnView.addGestureRecognizer(tapGesture)
 
-        let scene = buildScene()
-        scnView.scene = scene
+        scnView.scene = buildScene()
         context.coordinator.scnView = scnView
-
         return scnView
     }
 
     func updateUIView(_ scnView: SCNView, context: Context) {
-        let scene = buildScene()
-        scnView.scene = scene
+        scnView.scene = buildScene()
         context.coordinator.items = items
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     private func buildScene() -> SCNScene {
         let scene = SCNScene()
@@ -65,32 +60,28 @@ struct StorageSceneView: UIViewRepresentable {
         cameraNode.look(at: SCNVector3(space.width / 2, space.height / 3, space.depth / 2))
         scene.rootNode.addChildNode(cameraNode)
 
-        // Ambient light
         let ambientLight = SCNNode()
         ambientLight.light = SCNLight()
         ambientLight.light?.type = .ambient
         ambientLight.light?.intensity = 500
-        ambientLight.light?.color = UIColor.white
         scene.rootNode.addChildNode(ambientLight)
 
         return scene
     }
 
-    private func buildItemNode(_ item: StorageItem) -> SCNNode {
+    private func buildItemNode(_ item: Item) -> SCNNode {
         let wFt = item.widthFeet
         let hFt = item.heightFeet
         let dFt = item.depthFeet
+        let px = item.posX ?? 0
+        let py = item.posY ?? 0
+        let pz = item.posZ ?? 0
 
         let containerNode = SCNNode()
         containerNode.name = item.id.uuidString
-        containerNode.position = SCNVector3(
-            item.posX + wFt / 2,
-            item.posY + hFt / 2,
-            item.posZ + dFt / 2
-        )
-        containerNode.eulerAngles.y = item.rotationY
+        containerNode.position = SCNVector3(px + wFt / 2, py + hFt / 2, pz + dFt / 2)
+        containerNode.eulerAngles.y = item.rotationY ?? 0
 
-        // Build shape based on hint
         let geometry: SCNGeometry
         switch item.shapeHint {
         case "cylinder":
@@ -100,39 +91,31 @@ struct StorageSceneView: UIViewRepresentable {
         }
 
         let material = SCNMaterial()
-        material.diffuse.contents = UIColor(hex: item.colorHex) ?? UIColor.brown
-        material.roughness.contents = 0.8
-        // Slightly different look for non-box items
-        if item.category == .furniture {
-            material.roughness.contents = 0.4
-            material.metalness.contents = 0.1
-        }
+        material.diffuse.contents = UIColor(hex: item.colorHex ?? "#8B6914") ?? UIColor.brown
+        material.roughness.contents = item.category == .furniture ? 0.4 : 0.8
         geometry.materials = [material]
 
         let shapeNode = SCNNode(geometry: geometry)
         containerNode.addChildNode(shapeNode)
 
-        // Label on top
-        let labelText = item.category == .box ? "#\(item.boxNumber)" : item.label
+        // Label
+        let labelText = (item.category == .box || item.category == .tote) ? "#\(item.boxNumber ?? 0)" : item.name
         let textGeo = SCNText(string: labelText, extrusionDepth: 0.01)
         textGeo.font = UIFont.boldSystemFont(ofSize: 0.3)
         textGeo.firstMaterial?.diffuse.contents = UIColor.white
         textGeo.flatness = 0.1
         let textNode = SCNNode(geometry: textGeo)
-        let (min, max) = textNode.boundingBox
-        let textWidth = max.x - min.x
-        let textHeight = max.y - min.y
-        textNode.position = SCNVector3(-textWidth / 2, hFt / 2 + 0.01, textHeight / 2)
+        let (mn, mx) = textNode.boundingBox
+        textNode.position = SCNVector3(-(mx.x - mn.x) / 2, hFt / 2 + 0.01, (mx.y - mn.y) / 2)
         textNode.eulerAngles.x = -Float.pi / 2
         containerNode.addChildNode(textNode)
 
-        // Stack indicator
-        if item.stackable {
-            let indicatorGeo = SCNBox(width: CGFloat(wFt * 0.1), height: 0.02, length: CGFloat(dFt * 0.1), chamferRadius: 0.01)
-            indicatorGeo.firstMaterial?.diffuse.contents = UIColor.systemGreen
-            let indicatorNode = SCNNode(geometry: indicatorGeo)
-            indicatorNode.position = SCNVector3(wFt / 2 - wFt * 0.08, hFt / 2 + 0.02, dFt / 2 - dFt * 0.08)
-            containerNode.addChildNode(indicatorNode)
+        if item.stackable == true {
+            let ind = SCNBox(width: CGFloat(wFt * 0.1), height: 0.02, length: CGFloat(dFt * 0.1), chamferRadius: 0.01)
+            ind.firstMaterial?.diffuse.contents = UIColor.systemGreen
+            let indNode = SCNNode(geometry: ind)
+            indNode.position = SCNVector3(wFt / 2 - wFt * 0.08, hFt / 2 + 0.02, dFt / 2 - dFt * 0.08)
+            containerNode.addChildNode(indNode)
         }
 
         return containerNode
@@ -153,7 +136,7 @@ struct StorageSceneView: UIViewRepresentable {
     class Coordinator: NSObject {
         var parent: StorageSceneView
         var scnView: SCNView?
-        var items: [StorageItem] = []
+        var items: [Item] = []
 
         init(_ parent: StorageSceneView) {
             self.parent = parent
@@ -164,13 +147,10 @@ struct StorageSceneView: UIViewRepresentable {
             guard let scnView = scnView else { return }
             let location = gesture.location(in: scnView)
             let hitResults = scnView.hitTest(location, options: [.searchMode: SCNHitTestSearchMode.all.rawValue])
-
             for result in hitResults {
-                // Walk up to find the named container node
                 var node: SCNNode? = result.node
                 while let current = node {
-                    if let name = current.name,
-                       let itemId = UUID(uuidString: name),
+                    if let name = current.name, let itemId = UUID(uuidString: name),
                        let item = items.first(where: { $0.id == itemId }) {
                         parent.selectedItem = item
                         return
@@ -183,20 +163,14 @@ struct StorageSceneView: UIViewRepresentable {
     }
 }
 
-// MARK: - UIColor hex helper
-
 extension UIColor {
     convenience init?(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
         guard hexSanitized.count == 6 else { return nil }
         var rgb: UInt64 = 0
         Scanner(string: hexSanitized).scanHexInt64(&rgb)
-        self.init(
-            red: CGFloat((rgb & 0xFF0000) >> 16) / 255.0,
-            green: CGFloat((rgb & 0x00FF00) >> 8) / 255.0,
-            blue: CGFloat(rgb & 0x0000FF) / 255.0,
-            alpha: 1.0
-        )
+        self.init(red: CGFloat((rgb & 0xFF0000) >> 16) / 255.0,
+                  green: CGFloat((rgb & 0x00FF00) >> 8) / 255.0,
+                  blue: CGFloat(rgb & 0x0000FF) / 255.0, alpha: 1.0)
     }
 }
