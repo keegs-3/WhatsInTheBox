@@ -3,6 +3,8 @@ import SwiftUI
 
 @MainActor
 class StorageManager: ObservableObject {
+    @Published var locations: [Location] = []
+    @Published var selectedLocation: Location?
     @Published var spaces: [StorageSpace] = []
     @Published var selectedSpace: StorageSpace?
     @Published var items: [StorageItem] = []
@@ -12,22 +14,87 @@ class StorageManager: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    var familyId: UUID?
+
     private let service = SupabaseService.shared
 
-    // MARK: - Spaces
+    // MARK: - Locations
 
-    func loadSpaces() async {
+    func loadLocations() async {
         isLoading = true
         do {
-            spaces = try await service.fetchSpaces()
+            locations = try await service.fetchLocations()
+            if selectedLocation == nil, let first = locations.first {
+                selectedLocation = first
+                await loadSpaces(for: first)
+            }
         } catch {
-            errorMessage = "Failed to load spaces: \(error.localizedDescription)"
+            errorMessage = "Failed to load locations: \(error.localizedDescription)"
         }
         isLoading = false
     }
 
+    func addLocation(name: String, type: LocationType, address: String?, unitNumber: String?) async {
+        let location = Location(
+            familyId: familyId,
+            name: name,
+            locationType: type,
+            address: address,
+            unitNumber: unitNumber
+        )
+        do {
+            let created = try await service.createLocation(location)
+            locations.append(created)
+            if selectedLocation == nil {
+                selectedLocation = created
+            }
+        } catch {
+            errorMessage = "Failed to create location: \(error.localizedDescription)"
+        }
+    }
+
+    func deleteLocation(_ location: Location) async {
+        do {
+            try await service.deleteLocation(location.id)
+            locations.removeAll { $0.id == location.id }
+            if selectedLocation?.id == location.id {
+                selectedLocation = locations.first
+                if let loc = selectedLocation {
+                    await loadSpaces(for: loc)
+                } else {
+                    spaces = []
+                }
+            }
+        } catch {
+            errorMessage = "Failed to delete location: \(error.localizedDescription)"
+        }
+    }
+
+    func selectLocation(_ location: Location) async {
+        selectedLocation = location
+        await loadSpaces(for: location)
+    }
+
+    // MARK: - Spaces
+
+    func loadSpaces(for location: Location) async {
+        do {
+            spaces = try await service.fetchSpaces(for: location.id)
+        } catch {
+            errorMessage = "Failed to load spaces: \(error.localizedDescription)"
+        }
+    }
+
     func addSpace(name: String, width: Float, height: Float, depth: Float) async {
-        let space = StorageSpace(name: name, width: width, height: height, depth: depth)
+        guard let location = selectedLocation else { return }
+        let space = StorageSpace(
+            familyId: familyId,
+            locationId: location.id,
+            name: name,
+            width: width,
+            height: height,
+            depth: depth
+        )
         do {
             let created = try await service.createSpace(space)
             spaces.append(created)
@@ -82,7 +149,8 @@ class StorageManager: ObservableObject {
         stackable: Bool,
         colorHex: String,
         notes: String?,
-        productUrl: String?
+        productUrl: String?,
+        fullnessPercent: Int = 0
     ) async {
         guard let space = selectedSpace else { return }
         let nextNumber = (items.map(\.boxNumber).max() ?? 0) + 1
@@ -100,7 +168,8 @@ class StorageManager: ObservableObject {
             stackable: stackable,
             notes: notes,
             productUrl: productUrl,
-            shapeHint: itemType?.shapeHint ?? "box"
+            shapeHint: itemType?.shapeHint ?? "box",
+            fullnessPercent: fullnessPercent
         )
         do {
             let created = try await service.createItem(item)

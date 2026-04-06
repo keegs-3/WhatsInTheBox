@@ -5,51 +5,99 @@ struct ItemListView: View {
     let space: StorageSpace
 
     var body: some View {
-        List {
-            ForEach(manager.items) { item in
-                NavigationLink(destination: BoxDetailView(item: item)) {
-                    HStack {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color(hex: item.colorHex) ?? .brown)
-                                .frame(width: 44, height: 44)
-                            if item.category == .box {
-                                Text("#\(item.boxNumber)")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.white)
-                            } else {
-                                Image(systemName: iconFor(item.category))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.label)
-                                .font(.headline)
-                            HStack(spacing: 12) {
-                                if let w = item.weight {
-                                    Label("\(String(format: "%.0f", w)) lbs", systemImage: "scalemass")
-                                }
-                                Label("\(String(format: "%.0f", item.width))×\(String(format: "%.0f", item.depth))×\(String(format: "%.0f", item.height))\"", systemImage: "cube")
-                                if item.stackable {
-                                    Image(systemName: "square.stack.3d.up")
-                                        .foregroundStyle(.green)
-                                }
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 12) {
+                ForEach(manager.items) { item in
+                    NavigationLink(destination: BoxDetailView(item: item)) {
+                        ItemCard(item: item)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            Task { await manager.deleteItem(item) }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
-                    .padding(.vertical, 4)
                 }
             }
-            .onDelete { indexSet in
-                Task {
-                    for index in indexSet {
-                        await manager.deleteItem(manager.items[index])
+            .padding(.horizontal)
+            .padding(.top, 8)
+        }
+    }
+}
+
+// MARK: - Item Card (HomeKit-style tile)
+
+struct ItemCard: View {
+    let item: StorageItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Color strip + icon
+            HStack {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color(hex: item.colorHex) ?? .brown)
+                        .frame(width: 36, height: 36)
+                    if item.category == .box {
+                        Text("#\(item.boxNumber)")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.white)
+                    } else {
+                        Image(systemName: iconFor(item.category))
+                            .font(.caption)
+                            .foregroundStyle(.white)
                     }
+                }
+                Spacer()
+                if item.stackable {
+                    Image(systemName: "square.stack.3d.up")
+                        .font(.caption2)
+                        .foregroundStyle(.green)
+                }
+            }
+
+            Text(item.label)
+                .font(.caption.bold())
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            // Weight badge
+            if let w = item.weight {
+                Label("\(String(format: "%.0f", w)) lbs", systemImage: "scalemass")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            // Fullness bar (boxes only)
+            if item.category == .box {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(item.fullnessPercent)% full")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color(.systemGray5))
+                                .frame(height: 4)
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(fullnessColor(item.fullnessPercent))
+                                .frame(width: geo.size.width * CGFloat(item.fullnessPercent) / 100, height: 4)
+                        }
+                    }
+                    .frame(height: 4)
                 }
             }
         }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func iconFor(_ category: ItemCategory) -> String {
@@ -60,7 +108,15 @@ struct ItemListView: View {
         case .misc: return "archivebox"
         }
     }
+
+    private func fullnessColor(_ percent: Int) -> Color {
+        if percent < 50 { return .green }
+        if percent < 80 { return .yellow }
+        return .red
+    }
 }
+
+// MARK: - Color hex helper
 
 extension Color {
     init?(hex: String) {

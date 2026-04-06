@@ -7,18 +7,102 @@ enum ItemCategory: String, Codable, CaseIterable {
     case box, furniture, appliance, misc
 }
 
+enum LocationType: String, Codable, CaseIterable {
+    case house
+    case storageFacility = "storage_facility"
+    case apartment
+    case garage
+    case warehouse
+    case other
+
+    var displayName: String {
+        switch self {
+        case .house: return "House"
+        case .storageFacility: return "Storage Facility"
+        case .apartment: return "Apartment"
+        case .garage: return "Garage"
+        case .warehouse: return "Warehouse"
+        case .other: return "Other"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .house: return "house.fill"
+        case .storageFacility: return "building.2.fill"
+        case .apartment: return "building.fill"
+        case .garage: return "car.garage.fill"
+        case .warehouse: return "shippingbox.fill"
+        case .other: return "mappin.circle.fill"
+        }
+    }
+}
+
+// MARK: - Location (HomeKit "Home" equivalent)
+
+struct Location: Identifiable, Codable {
+    let id: UUID
+    var familyId: UUID?
+    var name: String
+    var locationType: LocationType
+    var address: String?
+    var unitNumber: String?
+    var iconName: String?
+    var sortOrder: Int
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        familyId: UUID? = nil,
+        name: String,
+        locationType: LocationType = .storageFacility,
+        address: String? = nil,
+        unitNumber: String? = nil,
+        iconName: String? = nil,
+        sortOrder: Int = 0
+    ) {
+        self.id = id
+        self.familyId = familyId
+        self.name = name
+        self.locationType = locationType
+        self.address = address
+        self.unitNumber = unitNumber
+        self.iconName = iconName ?? locationType.iconName
+        self.sortOrder = sortOrder
+        self.createdAt = Date()
+    }
+
+    var displayIcon: String {
+        iconName ?? locationType.iconName
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, address
+        case familyId = "family_id"
+        case locationType = "location_type"
+        case unitNumber = "unit_number"
+        case iconName = "icon_name"
+        case sortOrder = "sort_order"
+        case createdAt = "created_at"
+    }
+}
+
 // MARK: - Storage Space
 
 struct StorageSpace: Identifiable, Codable {
     let id: UUID
+    var familyId: UUID?
+    var locationId: UUID?
     var name: String
     var width: Float   // feet
     var height: Float  // feet
     var depth: Float   // feet
     var createdAt: Date
 
-    init(id: UUID = UUID(), name: String, width: Float, height: Float, depth: Float) {
+    init(id: UUID = UUID(), familyId: UUID? = nil, locationId: UUID? = nil, name: String, width: Float, height: Float, depth: Float) {
         self.id = id
+        self.familyId = familyId
+        self.locationId = locationId
         self.name = name
         self.width = width
         self.height = height
@@ -28,13 +112,17 @@ struct StorageSpace: Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, width, height, depth
+        case familyId = "family_id"
+        case locationId = "location_id"
         case createdAt = "created_at"
     }
 }
 
 // MARK: - Item Type (templates: Husky 27gal, IKEA shelf, etc.)
 
-struct ItemType: Identifiable, Codable {
+struct ItemType: Identifiable, Codable, Hashable {
+    static func == (lhs: ItemType, rhs: ItemType) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
     let id: UUID
     var name: String
     var brand: String?
@@ -157,6 +245,7 @@ struct StorageItem: Identifiable, Codable {
     var productUrl: String?
     var shapeHint: String?
     var shapeData: ShapeData?
+    var fullnessPercent: Int
     var createdAt: Date
 
     init(
@@ -180,7 +269,8 @@ struct StorageItem: Identifiable, Codable {
         notes: String? = nil,
         productUrl: String? = nil,
         shapeHint: String? = "box",
-        shapeData: ShapeData? = nil
+        shapeData: ShapeData? = nil,
+        fullnessPercent: Int = 0
     ) {
         self.id = id
         self.spaceId = spaceId
@@ -203,6 +293,7 @@ struct StorageItem: Identifiable, Codable {
         self.productUrl = productUrl
         self.shapeHint = shapeHint
         self.shapeData = shapeData
+        self.fullnessPercent = fullnessPercent
         self.createdAt = Date()
     }
 
@@ -228,6 +319,7 @@ struct StorageItem: Identifiable, Codable {
         case productUrl = "product_url"
         case shapeHint = "shape_hint"
         case shapeData = "shape_data"
+        case fullnessPercent = "fullness_percent"
         case createdAt = "created_at"
     }
 }

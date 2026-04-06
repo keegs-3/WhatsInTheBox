@@ -4,9 +4,49 @@ struct BoxDetailView: View {
     @EnvironmentObject var manager: StorageManager
     let item: StorageItem
     @State private var showingAddContent = false
+    @State private var fullness: Double = 0
 
     var body: some View {
         List {
+            // Fullness gauge (boxes only)
+            if item.category == .box {
+                Section {
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .stroke(Color(.systemGray5), lineWidth: 8)
+                                .frame(width: 100, height: 100)
+                            Circle()
+                                .trim(from: 0, to: fullness / 100)
+                                .stroke(
+                                    fullnessColor(Int(fullness)),
+                                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                                )
+                                .frame(width: 100, height: 100)
+                                .rotationEffect(.degrees(-90))
+                                .animation(.easeInOut, value: fullness)
+                            Text("\(Int(fullness))%")
+                                .font(.title2.bold())
+                        }
+
+                        Slider(value: $fullness, in: 0...100, step: 5) {
+                            Text("Fullness")
+                        }
+                        .onChange(of: fullness) { _, newValue in
+                            var updated = item
+                            updated.fullnessPercent = Int(newValue)
+                            Task { await manager.updateItem(updated) }
+                        }
+                        .tint(fullnessColor(Int(fullness)))
+
+                        Text("How full is this box?")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+
             Section("Info") {
                 if item.category == .box {
                     LabeledContent("Number", value: "#\(item.boxNumber)")
@@ -23,8 +63,8 @@ struct BoxDetailView: View {
                 if let notes = item.notes, !notes.isEmpty {
                     LabeledContent("Notes", value: notes)
                 }
-                if let url = item.productUrl, !url.isEmpty {
-                    Link("Product Link", destination: URL(string: url)!)
+                if let url = item.productUrl, !url.isEmpty, let link = URL(string: url) {
+                    Link("Product Link", destination: link)
                 }
             }
 
@@ -80,7 +120,14 @@ struct BoxDetailView: View {
             AddItemView()
         }
         .task {
+            fullness = Double(item.fullnessPercent)
             await manager.loadContents(for: item)
         }
+    }
+
+    private func fullnessColor(_ percent: Int) -> Color {
+        if percent < 50 { return .green }
+        if percent < 80 { return .yellow }
+        return .red
     }
 }

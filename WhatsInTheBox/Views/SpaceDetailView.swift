@@ -18,7 +18,7 @@ struct SpaceDetailView: View {
 
             Picker("View", selection: $showScene) {
                 Label("3D", systemImage: "cube").tag(true)
-                Label("List", systemImage: "list.bullet").tag(false)
+                Label("Cards", systemImage: "square.grid.2x2").tag(false)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)

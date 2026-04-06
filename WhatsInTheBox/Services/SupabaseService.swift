@@ -13,12 +13,43 @@ class SupabaseService {
         )
     }
 
+    // MARK: - Locations
+
+    func fetchLocations() async throws -> [Location] {
+        try await client
+            .from("locations")
+            .select()
+            .order("sort_order")
+            .order("name")
+            .execute()
+            .value
+    }
+
+    func createLocation(_ location: Location) async throws -> Location {
+        try await client
+            .from("locations")
+            .insert(location)
+            .select()
+            .single()
+            .execute()
+            .value
+    }
+
+    func deleteLocation(_ id: UUID) async throws {
+        try await client
+            .from("locations")
+            .delete()
+            .eq("id", value: id.uuidString)
+            .execute()
+    }
+
     // MARK: - Storage Spaces
 
-    func fetchSpaces() async throws -> [StorageSpace] {
+    func fetchSpaces(for locationId: UUID) async throws -> [StorageSpace] {
         try await client
             .from("storage_spaces")
             .select()
+            .eq("location_id", value: locationId.uuidString)
             .execute()
             .value
     }
@@ -54,17 +85,6 @@ class SupabaseService {
             .value
     }
 
-    func fetchPresetItemTypes() async throws -> [ItemType] {
-        try await client
-            .from("item_types")
-            .select()
-            .eq("is_preset", value: true)
-            .order("category")
-            .order("brand")
-            .execute()
-            .value
-    }
-
     func createItemType(_ itemType: ItemType) async throws -> ItemType {
         try await client
             .from("item_types")
@@ -75,7 +95,7 @@ class SupabaseService {
             .value
     }
 
-    // MARK: - Storage Items (boxes, furniture, etc.)
+    // MARK: - Storage Items
 
     func fetchItems(for spaceId: UUID) async throws -> [StorageItem] {
         try await client

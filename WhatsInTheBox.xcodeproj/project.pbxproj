@@ -23,6 +23,11 @@
 		A10014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10014; };
 		A10015 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10015; };
 		A10020 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = D10001; };
+		A10030 /* FamilyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
+		A10031 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
+		A10032 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
+		A10033 /* FamilySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
+		A10034 /* AddLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +47,11 @@
 		B10014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10015 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		C10001 /* WhatsInTheBox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhatsInTheBox.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10030 /* FamilyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyModels.swift; sourceTree = "<group>"; };
+		B10031 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		B10032 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		B10033 /* FamilySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySetupView.swift; sourceTree = "<group>"; };
+		B10034 /* AddLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLocationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				B10003 /* StorageModels.swift */,
+				B10030 /* FamilyModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -88,6 +99,8 @@
 		G10004 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B10032 /* AuthView.swift */,
+				B10033 /* FamilySetupView.swift */,
 				B10002 /* ContentView.swift */,
 				B10007 /* SpaceDetailView.swift */,
 				B10008 /* StorageSceneView.swift */,
@@ -96,6 +109,7 @@
 				B10011 /* AddSpaceView.swift */,
 				B10012 /* AddBoxView.swift */,
 				B10013 /* AddItemView.swift */,
+				B10034 /* AddLocationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -106,6 +120,7 @@
 				B10004 /* SupabaseService.swift */,
 				B10005 /* Config.swift */,
 				B10006 /* StorageManager.swift */,
+				B10031 /* AuthManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -215,6 +230,11 @@
 				A10011 /* AddSpaceView.swift in Sources */,
 				A10012 /* AddBoxView.swift in Sources */,
 				A10013 /* AddItemView.swift in Sources */,
+				A10030 /* FamilyModels.swift in Sources */,
+				A10031 /* AuthManager.swift in Sources */,
+				A10032 /* AuthView.swift in Sources */,
+				A10033 /* FamilySetupView.swift in Sources */,
+				A10034 /* AddLocationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

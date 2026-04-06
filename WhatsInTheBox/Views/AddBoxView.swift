@@ -16,6 +16,7 @@ struct AddItemToSpaceView: View {
     @State private var notes = ""
     @State private var productUrl = ""
     @State private var isGeneratingShape = false
+    @State private var fullnessPercent: Double = 0
 
     private let boxColors = [
         "#8B6914", "#D2691E", "#FF6600", "#4A90D9",
@@ -144,6 +145,17 @@ struct AddItemToSpaceView: View {
                     .padding(.vertical, 4)
                 }
 
+                if category == .box {
+                    Section("Packing") {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Fullness: \(Int(fullnessPercent))%")
+                                .font(.subheadline)
+                            Slider(value: $fullnessPercent, in: 0...100, step: 5)
+                                .tint(fullnessPercent < 50 ? .green : fullnessPercent < 80 ? .yellow : .red)
+                        }
+                    }
+                }
+
                 Section("Notes") {
                     TextField("Optional notes", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
@@ -169,7 +181,8 @@ struct AddItemToSpaceView: View {
                                 stackable: stackable,
                                 colorHex: selectedColor,
                                 notes: notes.isEmpty ? nil : notes,
-                                productUrl: productUrl.isEmpty ? nil : productUrl
+                                productUrl: productUrl.isEmpty ? nil : productUrl,
+                                fullnessPercent: Int(fullnessPercent)
                             )
                             dismiss()
                         }

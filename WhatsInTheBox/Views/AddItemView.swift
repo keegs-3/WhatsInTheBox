@@ -29,7 +29,7 @@ struct AddItemView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         Task {
-                            await manager.addItem(
+                            await manager.addContent(
                                 name: name,
                                 quantity: quantity,
                                 notes: notes.isEmpty ? nil : notes
