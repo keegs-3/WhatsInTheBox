@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var showingAddLocation = false
     @State private var showingAddSpace = false
     @State private var showMenu = false
+    @State private var showingAddSpace = false
 
     private var groupedLocations: [(LocationType, [Location])] {
         let grouped = Dictionary(grouping: manager.locations) { $0.locationType }
@@ -55,10 +56,10 @@ struct ContentView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showMenu) {
-                MenuSheet()
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .overlay {
+                SideMenuView(isOpen: $showMenu)
             }
-            .background(Color(.systemGroupedBackground))
             .sheet(isPresented: $showingAddLocation) {
                 AddLocationView()
             }
@@ -313,12 +314,8 @@ struct LocationCard: View {
         .padding(16)
         .background {
             RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+                .fill(Color(.secondarySystemGroupedBackground))
+                .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
         }
     }
 }

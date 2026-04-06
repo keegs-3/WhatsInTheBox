@@ -3,14 +3,14 @@ import Foundation
 struct Family: Identifiable, Codable {
     let id: UUID
     var name: String
-    var inviteCode: String
+    var inviteCode: String?
     var createdBy: UUID
     var createdAt: Date
 
     init(id: UUID = UUID(), name: String, createdBy: UUID) {
         self.id = id
         self.name = name
-        self.inviteCode = ""
+        self.inviteCode = nil  // let DB generate it
         self.createdBy = createdBy
         self.createdAt = Date()
     }

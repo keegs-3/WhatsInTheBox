@@ -80,7 +80,7 @@ enum LocationType: String, Codable, CaseIterable {
         case .house: return "house.fill"
         case .storageFacility: return "building.2.fill"
         case .apartment: return "building.fill"
-        case .garage: return "car.garage.fill"
+        case .garage: return "door.garage.double.bay.closed"
         case .warehouse: return "shippingbox.fill"
         case .other: return "mappin.circle.fill"
         }
