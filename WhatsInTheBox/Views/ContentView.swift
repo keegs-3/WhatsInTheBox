@@ -5,6 +5,8 @@ struct ContentView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showingAddLocation = false
     @State private var showingAddSpace = false
+    @State private var showingLocationDetail = false
+    @State private var confirmDeleteLocation = false
 
     var body: some View {
         NavigationStack {
@@ -23,10 +25,18 @@ struct ContentView: View {
                                     Task { await manager.selectLocation(location) }
                                 }
                                 .contextMenu {
-                                    Button(role: .destructive) {
-                                        Task { await manager.deleteLocation(location) }
+                                    Button {
+                                        Task { await manager.selectLocation(location) }
+                                        showingLocationDetail = true
                                     } label: {
-                                        Label("Delete", systemImage: "trash")
+                                        Label("Location Info", systemImage: "info.circle")
+                                    }
+                                    Divider()
+                                    Button(role: .destructive) {
+                                        Task { await manager.selectLocation(location) }
+                                        confirmDeleteLocation = true
+                                    } label: {
+                                        Label("Delete Location", systemImage: "trash")
                                     }
                                 }
                             }
@@ -103,11 +113,20 @@ struct ContentView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button { showingAddSpace = true } label: {
-                            Label("New Space", systemImage: "door.left.hand.open")
+                            Label("New Unit / Space", systemImage: "door.left.hand.open")
                         }
                         .disabled(manager.selectedLocation == nil)
                         Button { showingAddLocation = true } label: {
                             Label("New Location", systemImage: "building.2")
+                        }
+                        if manager.selectedLocation != nil {
+                            Divider()
+                            Button { showingLocationDetail = true } label: {
+                                Label("Location Info", systemImage: "info.circle")
+                            }
+                            Button(role: .destructive) { confirmDeleteLocation = true } label: {
+                                Label("Delete Location", systemImage: "trash")
+                            }
                         }
                     } label: {
                         Image(systemName: "plus")
@@ -136,6 +155,24 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingAddSpace) {
                 AddSpaceView()
+            }
+            .sheet(isPresented: $showingLocationDetail) {
+                if let location = manager.selectedLocation {
+                    LocationDetailSheet(location: location)
+                }
+            }
+            .confirmationDialog(
+                "Delete \(manager.selectedLocation?.name ?? "location")?",
+                isPresented: $confirmDeleteLocation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let loc = manager.selectedLocation {
+                        Task { await manager.deleteLocation(loc) }
+                    }
+                }
+            } message: {
+                Text("This will also delete all units and items inside.")
             }
             .task {
                 await manager.loadLocations()
@@ -171,11 +208,6 @@ struct LocationCard: View {
             Text(location.name)
                 .font(.caption.bold())
                 .lineLimit(1)
-            if let unit = location.unitNumber, !unit.isEmpty {
-                Text("Unit \(unit)")
-                    .font(.caption2)
-                    .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
-            }
             Text(location.locationType.displayName)
                 .font(.caption2)
                 .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
@@ -197,20 +229,110 @@ struct SpaceCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "cube.transparent")
-                .font(.title2)
-                .foregroundStyle(Color.accentColor)
+            HStack {
+                Image(systemName: space.isClimateControlled ? "snowflake" : "cube.transparent")
+                    .font(.title2)
+                    .foregroundStyle(Color.accentColor)
+                Spacer()
+                if let rate = space.monthlyRate {
+                    Text("$\(String(format: "%.0f", rate))/mo")
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                }
+            }
 
-            Text(space.name)
+            Text(space.displayName)
                 .font(.headline)
                 .lineLimit(1)
 
-            Text("\(String(format: "%.0f", space.width))×\(String(format: "%.0f", space.depth))×\(String(format: "%.0f", space.height)) ft")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Text(space.sizeLabel + " ft")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let fl = space.floor {
+                    Text("Floor \(fl)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+// MARK: - Location Detail Sheet
+
+struct LocationDetailSheet: View {
+    @EnvironmentObject var manager: StorageManager
+    @Environment(\.dismiss) private var dismiss
+    let location: Location
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Location") {
+                    LabeledContent("Name", value: location.name)
+                    LabeledContent("Type", value: location.locationType.displayName)
+                    if let addr = location.address, !addr.isEmpty {
+                        LabeledContent("Address", value: addr)
+                    }
+                }
+
+                if location.phone != nil || location.websiteUrl != nil || location.accessHours != nil {
+                    Section("Facility Info") {
+                        if let phone = location.phone, !phone.isEmpty {
+                            Link(destination: URL(string: "tel:\(phone)")!) {
+                                LabeledContent("Phone", value: phone)
+                            }
+                        }
+                        if let url = location.websiteUrl, !url.isEmpty, let link = URL(string: url) {
+                            Link("Website", destination: link)
+                        }
+                        if let hours = location.accessHours, !hours.isEmpty {
+                            LabeledContent("Access Hours", value: hours)
+                        }
+                        if let hours = location.officeHours, !hours.isEmpty {
+                            LabeledContent("Office Hours", value: hours)
+                        }
+                    }
+                }
+
+                Section("Units (\(manager.spaces.count))") {
+                    if manager.spaces.isEmpty {
+                        Text("No units yet")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(manager.spaces) { space in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(space.displayName)
+                                        .font(.body)
+                                    Text(space.sizeLabel + " ft")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if let rate = space.monthlyRate {
+                                    Text("$\(String(format: "%.0f", rate))/mo")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle(location.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }

@@ -34,13 +34,26 @@ class StorageManager: ObservableObject {
         isLoading = false
     }
 
-    func addLocation(name: String, type: LocationType, address: String?, unitNumber: String?) async {
+    func addLocation(
+        name: String,
+        type: LocationType,
+        address: String?,
+        unitNumber: String?,
+        phone: String? = nil,
+        websiteUrl: String? = nil,
+        accessHours: String? = nil,
+        officeHours: String? = nil
+    ) async {
         let location = Location(
             familyId: familyId,
             name: name,
             locationType: type,
             address: address,
-            unitNumber: unitNumber
+            unitNumber: unitNumber,
+            phone: phone,
+            websiteUrl: websiteUrl,
+            accessHours: accessHours,
+            officeHours: officeHours
         )
         do {
             let created = try await service.createLocation(location)
@@ -85,15 +98,39 @@ class StorageManager: ObservableObject {
         }
     }
 
-    func addSpace(name: String, width: Float, height: Float, depth: Float) async {
-        guard let location = selectedLocation else { return }
+    func addSpace(
+        name: String,
+        width: Float,
+        height: Float,
+        depth: Float,
+        unitNumber: String? = nil,
+        floor: Int? = nil,
+        monthlyRate: Float? = nil,
+        isClimateControlled: Bool = false,
+        moveInDate: Date? = nil,
+        contractEndDate: Date? = nil,
+        discountMonths: Int? = nil,
+        discountRate: Float? = nil,
+        notes: String? = nil,
+        locationOverride: Location? = nil
+    ) async {
+        guard let location = locationOverride ?? selectedLocation else { return }
         let space = StorageSpace(
             familyId: familyId,
             locationId: location.id,
             name: name,
             width: width,
             height: height,
-            depth: depth
+            depth: depth,
+            unitNumber: unitNumber,
+            floor: floor,
+            monthlyRate: monthlyRate,
+            isClimateControlled: isClimateControlled,
+            moveInDate: moveInDate,
+            contractEndDate: contractEndDate,
+            discountMonths: discountMonths,
+            discountRate: discountRate,
+            notes: notes
         )
         do {
             let created = try await service.createSpace(space)

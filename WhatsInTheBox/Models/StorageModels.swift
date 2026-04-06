@@ -49,6 +49,10 @@ struct Location: Identifiable, Codable {
     var unitNumber: String?
     var iconName: String?
     var sortOrder: Int
+    var phone: String?
+    var websiteUrl: String?
+    var accessHours: String?
+    var officeHours: String?
     var createdAt: Date
 
     init(
@@ -59,7 +63,11 @@ struct Location: Identifiable, Codable {
         address: String? = nil,
         unitNumber: String? = nil,
         iconName: String? = nil,
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        phone: String? = nil,
+        websiteUrl: String? = nil,
+        accessHours: String? = nil,
+        officeHours: String? = nil
     ) {
         self.id = id
         self.familyId = familyId
@@ -69,6 +77,10 @@ struct Location: Identifiable, Codable {
         self.unitNumber = unitNumber
         self.iconName = iconName ?? locationType.iconName
         self.sortOrder = sortOrder
+        self.phone = phone
+        self.websiteUrl = websiteUrl
+        self.accessHours = accessHours
+        self.officeHours = officeHours
         self.createdAt = Date()
     }
 
@@ -77,12 +89,15 @@ struct Location: Identifiable, Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, address
+        case id, name, address, phone
         case familyId = "family_id"
         case locationType = "location_type"
         case unitNumber = "unit_number"
         case iconName = "icon_name"
         case sortOrder = "sort_order"
+        case websiteUrl = "website_url"
+        case accessHours = "access_hours"
+        case officeHours = "office_hours"
         case createdAt = "created_at"
     }
 }
@@ -97,9 +112,35 @@ struct StorageSpace: Identifiable, Codable {
     var width: Float   // feet
     var height: Float  // feet
     var depth: Float   // feet
+    var unitNumber: String?
+    var floor: Int?
+    var monthlyRate: Float?
+    var isClimateControlled: Bool
+    var moveInDate: Date?
+    var contractEndDate: Date?
+    var discountMonths: Int?
+    var discountRate: Float?
+    var notes: String?
     var createdAt: Date
 
-    init(id: UUID = UUID(), familyId: UUID? = nil, locationId: UUID? = nil, name: String, width: Float, height: Float, depth: Float) {
+    init(
+        id: UUID = UUID(),
+        familyId: UUID? = nil,
+        locationId: UUID? = nil,
+        name: String,
+        width: Float,
+        height: Float,
+        depth: Float,
+        unitNumber: String? = nil,
+        floor: Int? = nil,
+        monthlyRate: Float? = nil,
+        isClimateControlled: Bool = false,
+        moveInDate: Date? = nil,
+        contractEndDate: Date? = nil,
+        discountMonths: Int? = nil,
+        discountRate: Float? = nil,
+        notes: String? = nil
+    ) {
         self.id = id
         self.familyId = familyId
         self.locationId = locationId
@@ -107,13 +148,40 @@ struct StorageSpace: Identifiable, Codable {
         self.width = width
         self.height = height
         self.depth = depth
+        self.unitNumber = unitNumber
+        self.floor = floor
+        self.monthlyRate = monthlyRate
+        self.isClimateControlled = isClimateControlled
+        self.moveInDate = moveInDate
+        self.contractEndDate = contractEndDate
+        self.discountMonths = discountMonths
+        self.discountRate = discountRate
+        self.notes = notes
         self.createdAt = Date()
     }
 
+    var displayName: String {
+        if let num = unitNumber, !num.isEmpty {
+            return "Unit \(num)"
+        }
+        return name
+    }
+
+    var sizeLabel: String {
+        "\(String(format: "%.0f", width))×\(String(format: "%.0f", depth))"
+    }
+
     enum CodingKeys: String, CodingKey {
-        case id, name, width, height, depth
+        case id, name, width, height, depth, floor, notes
         case familyId = "family_id"
         case locationId = "location_id"
+        case unitNumber = "unit_number"
+        case monthlyRate = "monthly_rate"
+        case isClimateControlled = "is_climate_controlled"
+        case moveInDate = "move_in_date"
+        case contractEndDate = "contract_end_date"
+        case discountMonths = "discount_months"
+        case discountRate = "discount_rate"
         case createdAt = "created_at"
     }
 }
