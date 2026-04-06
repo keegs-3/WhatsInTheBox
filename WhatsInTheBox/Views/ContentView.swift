@@ -58,6 +58,7 @@ struct ContentView: View {
             .sheet(isPresented: $showMenu) {
                 MenuSheet()
             }
+            .background(Color(.systemGroupedBackground))
             .sheet(isPresented: $showingAddLocation) {
                 AddLocationView()
             }
@@ -82,100 +83,110 @@ struct LocationDetailView: View {
     @EnvironmentObject var manager: StorageManager
     let location: Location
     @State private var showingAddSpace = false
-    @State private var showingLocationInfo = false
     @State private var confirmDelete = false
+    @State private var showingEditLocation = false
 
     var body: some View {
-        Group {
-            if manager.spaces.isEmpty {
-                VStack {
-                    Spacer()
-                    ContentUnavailableView(
-                        "No Spaces",
-                        systemImage: "door.left.hand.open",
-                        description: Text("Add a room or unit to get started")
-                    )
-                    Button("Add Space") { showingAddSpace = true }
-                        .buttonStyle(.borderedProminent)
-                    Spacer()
+        List {
+            // Location info
+            if let addr = location.address, !addr.isEmpty {
+                Section {
+                    HStack(spacing: 8) {
+                        Image(systemName: "mappin")
+                            .foregroundStyle(.secondary)
+                        Text(addr)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            } else {
-                List {
-                    // Location summary
-                    if let addr = location.address, !addr.isEmpty {
-                        Section {
-                            Label(addr, systemImage: "mappin.circle")
+            }
+
+            // Spaces / Units
+            Section {
+                if manager.spaces.isEmpty {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 8) {
+                            Image(systemName: "door.left.hand.open")
+                                .font(.title)
+                                .foregroundStyle(.secondary)
+                            Text("No spaces yet")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            Button("Add Space") { showingAddSpace = true }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.small)
                         }
+                        .padding(.vertical, 24)
+                        Spacer()
                     }
-
-                    // Spaces / Units
-                    Section("Spaces & Units") {
-                        ForEach(manager.spaces) { space in
-                            NavigationLink(destination: SpaceDetailView(space: space)) {
-                                HStack(spacing: 12) {
-                                    Image(systemName: space.isClimateControlled ? "snowflake" : "cube.transparent")
-                                        .font(.title3)
-                                        .foregroundStyle(Color.accentColor)
-                                        .frame(width: 32)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(space.displayName)
-                                            .font(.body.weight(.medium))
-                                        HStack(spacing: 8) {
-                                            Text(space.sizeLabel + " ft")
-                                            if let fl = space.floor { Text("Floor \(fl)") }
-                                            if let rate = space.monthlyRate {
-                                                Text("$\(String(format: "%.0f", rate))/mo")
-                                            }
+                } else {
+                    ForEach(manager.spaces) { space in
+                        NavigationLink(destination: SpaceDetailView(space: space)) {
+                            HStack(spacing: 12) {
+                                Image(systemName: space.isClimateControlled ? "snowflake" : "cube.transparent")
+                                    .font(.title3)
+                                    .foregroundStyle(Color.accentColor)
+                                    .frame(width: 32)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(space.displayName)
+                                        .font(.body.weight(.medium))
+                                    HStack(spacing: 8) {
+                                        Text(space.sizeLabel + " ft")
+                                        if let fl = space.floor { Text("Floor \(fl)") }
+                                        if let rate = space.monthlyRate {
+                                            Text("$\(String(format: "%.0f", rate))/mo")
                                         }
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
                                     }
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                 }
                             }
                         }
-                        .onDelete { indexSet in
-                            Task {
-                                for i in indexSet { await manager.deleteSpace(manager.spaces[i]) }
-                            }
+                    }
+                    .onDelete { indexSet in
+                        Task {
+                            for i in indexSet { await manager.deleteSpace(manager.spaces[i]) }
                         }
                     }
+                }
+            } header: {
+                Text("Spaces & Units")
+            }
 
-                    // Facility info
-                    if location.phone != nil || location.accessHours != nil || location.websiteUrl != nil {
-                        Section("Facility Info") {
-                            if let phone = location.phone, !phone.isEmpty {
-                                Link(destination: URL(string: "tel:\(phone)")!) {
-                                    LabeledContent("Phone", value: phone)
-                                }
-                            }
-                            if let hours = location.accessHours, !hours.isEmpty {
-                                LabeledContent("Access Hours", value: hours)
-                            }
-                            if let hours = location.officeHours, !hours.isEmpty {
-                                LabeledContent("Office Hours", value: hours)
-                            }
-                            if let url = location.websiteUrl, !url.isEmpty, let link = URL(string: url) {
-                                Link("Website", destination: link)
-                            }
+            // Facility info
+            if location.phone != nil || location.accessHours != nil || location.websiteUrl != nil {
+                Section("Facility Info") {
+                    if let phone = location.phone, !phone.isEmpty {
+                        Link(destination: URL(string: "tel:\(phone)")!) {
+                            LabeledContent("Phone", value: phone)
                         }
                     }
+                    if let hours = location.accessHours, !hours.isEmpty {
+                        LabeledContent("Access Hours", value: hours)
+                    }
+                    if let hours = location.officeHours, !hours.isEmpty {
+                        LabeledContent("Office Hours", value: hours)
+                    }
+                    if let url = location.websiteUrl, !url.isEmpty, let link = URL(string: url) {
+                        Link("Website", destination: link)
+                    }
+                }
+            }
 
-                    // Danger zone
-                    Section {
-                        Button(role: .destructive) { confirmDelete = true } label: {
-                            Label("Delete Location", systemImage: "trash")
-                        }
-                    }
+            Section {
+                Button(role: .destructive) { confirmDelete = true } label: {
+                    Label("Delete Location", systemImage: "trash")
                 }
             }
         }
         .navigationTitle(location.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button { showingAddSpace = true } label: {
-                    Image(systemName: "plus")
+                HStack(spacing: 12) {
+                    Button { showingAddSpace = true } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -272,14 +283,14 @@ struct LocationCard: View {
 
             // Details
             if let addr = location.address, !addr.isEmpty {
-                Label {
+                HStack(spacing: 6) {
+                    Image(systemName: "mappin")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     Text(addr)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
-                } icon: {
-                    Image(systemName: "mappin.circle.fill")
-                        .foregroundStyle(.red)
                 }
             }
 
