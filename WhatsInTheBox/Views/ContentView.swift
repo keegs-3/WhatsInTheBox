@@ -2,11 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var manager: StorageManager
-    @EnvironmentObject var authManager: AuthManager
     @State private var showingAddLocation = false
     @State private var showingAddSpace = false
     @State private var showMenu = false
-    @State private var showingAddSpace = false
 
     private var groupedLocations: [(LocationType, [Location])] {
         let grouped = Dictionary(grouping: manager.locations) { $0.locationType }
@@ -201,52 +199,6 @@ struct LocationDetailView: View {
         }
         .task {
             await manager.selectLocation(location)
-        }
-    }
-}
-
-// MARK: - Menu Sheet (hamburger menu)
-
-struct MenuSheet: View {
-    @EnvironmentObject var authManager: AuthManager
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if let family = authManager.currentFamily {
-                    Section("Family") {
-                        LabeledContent("Name", value: family.name)
-                        HStack {
-                            LabeledContent("Invite Code", value: family.inviteCode)
-                            Button {
-                                UIPasteboard.general.string = family.inviteCode
-                            } label: {
-                                Image(systemName: "doc.on.doc")
-                                    .font(.caption)
-                            }
-                        }
-                    }
-                }
-
-                Section("Account") {
-                    Button(role: .destructive) {
-                        Task {
-                            await authManager.signOut()
-                            dismiss()
-                        }
-                    } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                    }
-                }
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
         }
     }
 }
