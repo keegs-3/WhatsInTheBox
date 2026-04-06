@@ -29,6 +29,7 @@
 		A10033 /* FamilySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* FamilySetupView.swift */; };
 		A10034 /* AddLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* AddLocationView.swift */; };
 		A10035 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* InventoryView.swift */; };
+		A10036 /* SFSymbolPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10036 /* SFSymbolPicker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +54,7 @@
 		B10033 /* FamilySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySetupView.swift; sourceTree = "<group>"; };
 		B10034 /* AddLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLocationView.swift; sourceTree = "<group>"; };
 		B10035 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
+		B10036 /* SFSymbolPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolPicker.swift; sourceTree = "<group>"; };
 		C10001 /* WhatsInTheBox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhatsInTheBox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -113,6 +115,7 @@
 				B10013 /* AddItemView.swift */,
 				B10034 /* AddLocationView.swift */,
 				B10035 /* InventoryView.swift */,
+				B10036 /* SFSymbolPicker.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -239,6 +242,7 @@
 				A10033 /* FamilySetupView.swift in Sources */,
 				A10034 /* AddLocationView.swift in Sources */,
 				A10035 /* InventoryView.swift in Sources */,
+				A10036 /* SFSymbolPicker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -23,6 +23,7 @@ struct InventoryView: View {
     }
 
     var body: some View {
+        NavigationStack {
         Group {
             if manager.inventoryItems.isEmpty && searchText.isEmpty {
                 VStack(spacing: 16) {
@@ -71,8 +72,10 @@ struct InventoryView: View {
         .sheet(isPresented: $showingAddItem) {
             AddInventoryItemView()
         }
+        .navigationTitle("Inventory")
         .task {
             await manager.loadInventory()
+        }
         }
     }
 }
@@ -144,12 +147,35 @@ struct AddInventoryItemView: View {
     @State private var isWrapped = false
     @State private var wrappingMaterial: WrappingMaterial = .none
     @State private var notes = ""
+    @State private var icon: String?
+    @State private var showingIconPicker = false
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Item") {
                     TextField("Name", text: $name)
+
+                    Button {
+                        showingIconPicker = true
+                    } label: {
+                        HStack {
+                            Text("Icon")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if let icon = icon {
+                                Image(systemName: icon)
+                                    .foregroundStyle(.accentColor)
+                                Text(icon)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("None")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     Picker("Category", selection: $category) {
                         ForEach(ItemCategory.allCases, id: \.self) { cat in
                             Text(cat.displayName).tag(cat)
@@ -197,7 +223,7 @@ struct AddInventoryItemView: View {
                             await manager.addToInventory(
                                 name: name, category: category,
                                 width: width, height: height, depth: depth,
-                                weight: weight, quantity: quantity,
+                                weight: weight, icon: icon, quantity: quantity,
                                 isBreakable: isBreakable, isWrapped: isWrapped,
                                 wrappingMaterial: isWrapped ? wrappingMaterial.rawValue : nil,
                                 notes: notes.isEmpty ? nil : notes
@@ -207,6 +233,9 @@ struct AddInventoryItemView: View {
                     }
                     .disabled(name.isEmpty)
                 }
+            .sheet(isPresented: $showingIconPicker) {
+                SFSymbolPicker(selectedSymbol: $icon)
+            }
             }
         }
     }

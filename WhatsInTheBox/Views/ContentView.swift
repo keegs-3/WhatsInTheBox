@@ -2,171 +2,43 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var manager: StorageManager
-    @EnvironmentObject var authManager: AuthManager
     @State private var showingAddLocation = false
     @State private var showingAddSpace = false
     @State private var showingLocationDetail = false
     @State private var confirmDeleteLocation = false
-    @State private var activeTab = 0  // 0 = Locations, 1 = Inventory
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // MARK: - Tab Picker
-                Picker("View", selection: $activeTab) {
-                    Text("Locations").tag(0)
-                    Text("Inventory").tag(1)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 8)
-
-                if activeTab == 1 {
-                    InventoryView()
-                } else if !manager.locations.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(manager.locations) { location in
-                                LocationCard(
-                                    location: location,
-                                    isSelected: manager.selectedLocation?.id == location.id,
-                                    spaceCount: location.id == manager.selectedLocation?.id ? manager.spaces.count : 0
-                                )
-                                .onTapGesture {
-                                    Task { await manager.selectLocation(location) }
-                                }
-                                .contextMenu {
-                                    Button {
-                                        Task { await manager.selectLocation(location) }
-                                        showingLocationDetail = true
-                                    } label: {
-                                        Label("Location Info", systemImage: "info.circle")
-                                    }
-                                    Divider()
-                                    Button(role: .destructive) {
-                                        Task { await manager.selectLocation(location) }
-                                        confirmDeleteLocation = true
-                                    } label: {
-                                        Label("Delete Location", systemImage: "trash")
-                                    }
-                                }
-                            }
-
-                            // Add location card
-                            Button { showingAddLocation = true } label: {
-                                VStack(spacing: 8) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.title2)
-                                    Text("Add Location")
-                                        .font(.caption2)
-                                }
-                                .frame(width: 140, height: 90)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 12)
-                    }
-                }
-
-                Divider()
-
-                // MARK: - Spaces Grid
-                if manager.locations.isEmpty {
-                    Spacer()
-                    ContentUnavailableView(
-                        "No Locations Yet",
-                        systemImage: "building.2",
-                        description: Text("Add a location to get started — a storage facility, house, garage, etc.")
-                    )
-                    Button("Add Location") { showingAddLocation = true }
-                        .buttonStyle(.borderedProminent)
-                        .padding()
-                    Spacer()
-                } else if manager.spaces.isEmpty {
-                    Spacer()
-                    ContentUnavailableView(
-                        "No Spaces",
-                        systemImage: "door.left.hand.open",
-                        description: Text("Add a room or unit to \(manager.selectedLocation?.name ?? "this location")")
-                    )
-                    Button("Add Space") { showingAddSpace = true }
-                        .buttonStyle(.borderedProminent)
-                        .padding()
-                    Spacer()
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 16),
-                            GridItem(.flexible(), spacing: 16)
-                        ], spacing: 16) {
-                            ForEach(manager.spaces) { space in
-                                NavigationLink(destination: SpaceDetailView(space: space)) {
-                                    SpaceCard(space: space)
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        Task { await manager.deleteSpace(space) }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            }
-                        }
-                        .padding()
-                    }
-                }
+                locationsContent
             }
             .navigationTitle("What's In The Box?")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        Button { showingAddSpace = true } label: {
-                            Label("New Unit / Space", systemImage: "door.left.hand.open")
-                        }
-                        .disabled(manager.selectedLocation == nil)
-                        Button { showingAddLocation = true } label: {
-                            Label("New Location", systemImage: "building.2")
-                        }
-                        if manager.selectedLocation != nil {
-                            Divider()
-                            Button { showingLocationDetail = true } label: {
-                                Label("Location Info", systemImage: "info.circle")
+                            Button { showingAddSpace = true } label: {
+                                Label("New Unit / Space", systemImage: "door.left.hand.open")
                             }
-                            Button(role: .destructive) { confirmDeleteLocation = true } label: {
-                                Label("Delete Location", systemImage: "trash")
+                            .disabled(manager.selectedLocation == nil)
+                            Button { showingAddLocation = true } label: {
+                                Label("New Location", systemImage: "building.2")
                             }
-                        }
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Menu {
-                        if let family = authManager.currentFamily {
-                            Section {
-                                Label(family.name, systemImage: "person.2")
-                                Text("Invite code: \(family.inviteCode)")
+                            if manager.selectedLocation != nil {
+                                Divider()
+                                Button { showingLocationDetail = true } label: {
+                                    Label("Location Info", systemImage: "info.circle")
+                                }
+                                Button(role: .destructive) { confirmDeleteLocation = true } label: {
+                                    Label("Delete Location", systemImage: "trash")
+                                }
                             }
-                        }
-                        Button(role: .destructive) {
-                            Task { await authManager.signOut() }
                         } label: {
-                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            Image(systemName: "plus")
                         }
-                    } label: {
-                        Image(systemName: "person.circle")
                     }
                 }
-            }
-            .sheet(isPresented: $showingAddLocation) {
-                AddLocationView()
-            }
-            .sheet(isPresented: $showingAddSpace) {
-                AddSpaceView()
-            }
+            .sheet(isPresented: $showingAddLocation) { AddLocationView() }
+            .sheet(isPresented: $showingAddSpace) { AddSpaceView() }
             .sheet(isPresented: $showingLocationDetail) {
                 if let location = manager.selectedLocation {
                     LocationDetailSheet(location: location)
@@ -174,8 +46,7 @@ struct ContentView: View {
             }
             .confirmationDialog(
                 "Delete \(manager.selectedLocation?.name ?? "location")?",
-                isPresented: $confirmDeleteLocation,
-                titleVisibility: .visible
+                isPresented: $confirmDeleteLocation, titleVisibility: .visible
             ) {
                 Button("Delete", role: .destructive) {
                     if let loc = manager.selectedLocation {
@@ -185,9 +56,7 @@ struct ContentView: View {
             } message: {
                 Text("This will also delete all units and items inside.")
             }
-            .task {
-                await manager.loadLocations()
-            }
+            .task { await manager.loadLocations() }
             .alert("Error", isPresented: .init(
                 get: { manager.errorMessage != nil },
                 set: { if !$0 { manager.errorMessage = nil } }
@@ -195,6 +64,96 @@ struct ContentView: View {
                 Button("OK") { manager.errorMessage = nil }
             } message: {
                 Text(manager.errorMessage ?? "")
+            }
+        }
+    }
+
+    // MARK: - Locations Tab Content
+
+    @ViewBuilder
+    private var locationsContent: some View {
+        if manager.locations.isEmpty {
+            Spacer()
+            ContentUnavailableView(
+                "No Locations Yet",
+                systemImage: "building.2",
+                description: Text("Add a location to get started")
+            )
+            Button("Add Location") { showingAddLocation = true }
+                .buttonStyle(.borderedProminent)
+            Spacer()
+        } else {
+            // Location cards
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(manager.locations) { location in
+                        LocationCard(
+                            location: location,
+                            isSelected: manager.selectedLocation?.id == location.id,
+                            spaceCount: location.id == manager.selectedLocation?.id ? manager.spaces.count : 0
+                        )
+                        .onTapGesture {
+                            Task { await manager.selectLocation(location) }
+                        }
+                        .contextMenu {
+                            Button {
+                                Task { await manager.selectLocation(location) }
+                                showingLocationDetail = true
+                            } label: { Label("Location Info", systemImage: "info.circle") }
+                            Divider()
+                            Button(role: .destructive) {
+                                Task { await manager.selectLocation(location) }
+                                confirmDeleteLocation = true
+                            } label: { Label("Delete", systemImage: "trash") }
+                        }
+                    }
+                    Button { showingAddLocation = true } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill").font(.title2)
+                            Text("Add Location").font(.caption2)
+                        }
+                        .frame(width: 140, height: 90)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+            }
+
+            Divider()
+
+            // Spaces for selected location
+            if manager.spaces.isEmpty {
+                Spacer()
+                ContentUnavailableView(
+                    "No Spaces",
+                    systemImage: "door.left.hand.open",
+                    description: Text("Add a room or unit to \(manager.selectedLocation?.name ?? "this location")")
+                )
+                Button("Add Space") { showingAddSpace = true }
+                    .buttonStyle(.borderedProminent)
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 16),
+                        GridItem(.flexible(), spacing: 16)
+                    ], spacing: 16) {
+                        ForEach(manager.spaces) { space in
+                            NavigationLink(destination: SpaceDetailView(space: space)) {
+                                SpaceCard(space: space)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    Task { await manager.deleteSpace(space) }
+                                } label: { Label("Delete", systemImage: "trash") }
+                            }
+                        }
+                    }
+                    .padding()
+                }
             }
         }
     }
@@ -253,19 +212,11 @@ struct SpaceCard: View {
                         .background(Color.accentColor.opacity(0.15), in: Capsule())
                 }
             }
-
-            Text(space.displayName)
-                .font(.headline)
-                .lineLimit(1)
-
+            Text(space.displayName).font(.headline).lineLimit(1)
             HStack(spacing: 8) {
-                Text(space.sizeLabel + " ft")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(space.sizeLabel + " ft").font(.caption).foregroundStyle(.secondary)
                 if let fl = space.floor {
-                    Text("Floor \(fl)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text("Floor \(fl)").font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
@@ -292,7 +243,6 @@ struct LocationDetailSheet: View {
                         LabeledContent("Address", value: addr)
                     }
                 }
-
                 if location.phone != nil || location.websiteUrl != nil || location.accessHours != nil {
                     Section("Facility Info") {
                         if let phone = location.phone, !phone.isEmpty {
@@ -311,26 +261,19 @@ struct LocationDetailSheet: View {
                         }
                     }
                 }
-
                 Section("Units (\(manager.spaces.count))") {
                     if manager.spaces.isEmpty {
-                        Text("No units yet")
-                            .foregroundStyle(.secondary)
+                        Text("No units yet").foregroundStyle(.secondary)
                     } else {
                         ForEach(manager.spaces) { space in
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(space.displayName)
-                                        .font(.body)
-                                    Text(space.sizeLabel + " ft")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    Text(space.sizeLabel + " ft").font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 if let rate = space.monthlyRate {
-                                    Text("$\(String(format: "%.0f", rate))/mo")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    Text("$\(String(format: "%.0f", rate))/mo").font(.caption).foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -340,9 +283,7 @@ struct LocationDetailSheet: View {
             .navigationTitle(location.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
     }

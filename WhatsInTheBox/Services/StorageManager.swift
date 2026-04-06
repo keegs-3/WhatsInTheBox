@@ -15,6 +15,8 @@ class StorageManager: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    @Published var allBoxes: [Item] = []
+
     var familyId: UUID?
 
     private let service = SupabaseService.shared
@@ -275,6 +277,25 @@ class StorageManager: ObservableObject {
         updated.spaceId = nil
         await updateItem(updated)
         inventoryItems.removeAll { $0.id == item.id }
+    }
+
+    // MARK: - All Boxes (cross-space view)
+
+    func loadAllBoxes() async {
+        guard let fid = familyId else { return }
+        do {
+            let all: [Item] = try await service.client
+                .from("items")
+                .select()
+                .eq("family_id", value: fid.uuidString)
+                .eq("is_container", value: true)
+                .order("box_number")
+                .execute()
+                .value
+            allBoxes = all
+        } catch {
+            errorMessage = "Failed to load boxes: \(error.localizedDescription)"
+        }
     }
 
     // MARK: - AI Shape Generation
