@@ -165,7 +165,7 @@ struct AddInventoryItemView: View {
                             Spacer()
                             if let icon = icon {
                                 Image(systemName: icon)
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                                 Text(icon)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -233,9 +233,9 @@ struct AddInventoryItemView: View {
                     }
                     .disabled(name.isEmpty)
                 }
+            }
             .sheet(isPresented: $showingIconPicker) {
                 SFSymbolPicker(selectedSymbol: $icon)
-            }
             }
         }
     }

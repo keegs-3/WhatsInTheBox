@@ -36,43 +36,29 @@ struct MainTabView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Content
             Group {
                 switch selectedTab {
                 case 0: ContentView()
                 case 1: InventoryView()
                 case 2: BoxesView()
-                case 3: ProfileView()
                 default: ContentView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.bottom, 70) // Space for tab bar
 
-            // Custom Tab Bar
+            // Tab bar + FAB
             HStack(spacing: 16) {
-                // Tab bubble
                 HStack(spacing: 0) {
-                    TabBarButton(icon: "building.2", label: "Locations", isSelected: selectedTab == 0) {
-                        selectedTab = 0
-                    }
-                    TabBarButton(icon: "tray.full", label: "Inventory", isSelected: selectedTab == 1) {
-                        selectedTab = 1
-                    }
-                    TabBarButton(icon: "shippingbox", label: "Boxes", isSelected: selectedTab == 2) {
-                        selectedTab = 2
-                    }
-                    TabBarButton(icon: "person.circle", label: "Profile", isSelected: selectedTab == 3) {
-                        selectedTab = 3
-                    }
+                    TabBarButton(icon: "building.2", label: "Locations", isSelected: selectedTab == 0) { selectedTab = 0 }
+                    TabBarButton(icon: "tray.full", label: "Inventory", isSelected: selectedTab == 1) { selectedTab = 1 }
+                    TabBarButton(icon: "shippingbox", label: "Boxes", isSelected: selectedTab == 2) { selectedTab = 2 }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .background(.ultraThinMaterial, in: Capsule())
 
-                // FAB
-                Button {
-                    showQuickAdd = true
-                } label: {
+                Button { showQuickAdd = true } label: {
                     Image(systemName: "plus")
                         .font(.title2.bold())
                         .foregroundStyle(.white)
