@@ -242,6 +242,7 @@ struct BoxVisual: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Colored lid
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(hex: item.colorHex ?? "#8B6914") ?? .brown)
                 .frame(height: 24)
@@ -255,8 +256,9 @@ struct BoxVisual: View {
                 }
                 .padding(.horizontal, 4)
 
+            // Body
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color(.systemGray6))
+                .fill(bodyFill)
                 .frame(height: 80)
                 .overlay {
                     VStack(spacing: 4) {
@@ -276,6 +278,14 @@ struct BoxVisual: View {
                 .padding(.horizontal, 8)
         }
         .padding(.vertical, 8)
+    }
+
+    private var bodyFill: Color {
+        let raw = item.bodyColorHex ?? ""
+        if raw.lowercased() == "clear" {
+            return Color(.systemGray6).opacity(0.3)
+        }
+        return Color(hex: raw) ?? Color(.systemGray6)
     }
 
     private func fullnessColor(_ percent: Int) -> Color {

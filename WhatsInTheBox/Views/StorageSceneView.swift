@@ -92,21 +92,47 @@ struct StorageSceneView: UIViewRepresentable {
         containerNode.position = SCNVector3(px + wFt / 2, py + hFt / 2, pz + dFt / 2)
         containerNode.eulerAngles.y = item.rotationY ?? 0
 
-        let geometry: SCNGeometry
-        switch item.shapeHint {
-        case "cylinder":
-            geometry = SCNCylinder(radius: CGFloat(max(wFt, dFt) / 2), height: CGFloat(hFt))
-        default:
-            geometry = SCNBox(width: CGFloat(wFt), height: CGFloat(hFt), length: CGFloat(dFt), chamferRadius: 0.02)
+        let lidColor = UIColor(hex: item.colorHex ?? "#8B6914") ?? UIColor.brown
+        let bodyRaw = item.bodyColorHex ?? ""
+        let isClear = bodyRaw.lowercased() == "clear"
+        let bodyColor = isClear ? UIColor.white.withAlphaComponent(0.15) : (UIColor(hex: bodyRaw) ?? lidColor)
+
+        if item.shapeHint == "cylinder" {
+            let geo = SCNCylinder(radius: CGFloat(max(wFt, dFt) / 2), height: CGFloat(hFt))
+            let mat = SCNMaterial()
+            mat.diffuse.contents = lidColor
+            mat.roughness.contents = 0.8
+            geo.materials = [mat]
+            let node = SCNNode(geometry: geo)
+            containerNode.addChildNode(node)
+        } else {
+            // Body (main box)
+            let lidThickness: Float = 0.06
+            let bodyH = hFt - lidThickness
+
+            let bodyGeo = SCNBox(width: CGFloat(wFt), height: CGFloat(bodyH), length: CGFloat(dFt), chamferRadius: 0.01)
+            let bodyMat = SCNMaterial()
+            bodyMat.diffuse.contents = bodyColor
+            bodyMat.roughness.contents = 0.8
+            if isClear {
+                bodyMat.transparency = 0.3
+                bodyMat.transparencyMode = .dualLayer
+            }
+            bodyGeo.materials = [bodyMat]
+            let bodyNode = SCNNode(geometry: bodyGeo)
+            bodyNode.position = SCNVector3(0, -lidThickness / 2, 0)
+            containerNode.addChildNode(bodyNode)
+
+            // Lid (top)
+            let lidGeo = SCNBox(width: CGFloat(wFt + 0.02), height: CGFloat(lidThickness), length: CGFloat(dFt + 0.02), chamferRadius: 0.02)
+            let lidMat = SCNMaterial()
+            lidMat.diffuse.contents = lidColor
+            lidMat.roughness.contents = 0.6
+            lidGeo.materials = [lidMat]
+            let lidNode = SCNNode(geometry: lidGeo)
+            lidNode.position = SCNVector3(0, bodyH / 2, 0)
+            containerNode.addChildNode(lidNode)
         }
-
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(hex: item.colorHex ?? "#8B6914") ?? UIColor.brown
-        material.roughness.contents = item.category == .furniture ? 0.4 : 0.8
-        geometry.materials = [material]
-
-        let shapeNode = SCNNode(geometry: geometry)
-        containerNode.addChildNode(shapeNode)
 
         // Label
         let labelText = (item.category == .box || item.category == .tote) ? "#\(item.boxNumber ?? 0)" : item.name

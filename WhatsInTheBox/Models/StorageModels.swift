@@ -364,7 +364,8 @@ struct Item: Identifiable, Codable {
 
     // Container fields
     var isContainer: Bool
-    var colorHex: String?
+    var colorHex: String?      // lid/top color
+    var bodyColorHex: String?  // body color (nil = same as lid, "clear" = transparent)
     var fullnessPct: Int?
     var boxNumber: Int?
     var stackable: Bool?
@@ -406,6 +407,7 @@ struct Item: Identifiable, Codable {
         quantity: Int = 1,
         isContainer: Bool = false,
         colorHex: String? = "#8B6914",
+        bodyColorHex: String? = nil,
         fullnessPct: Int? = 0,
         boxNumber: Int? = nil,
         stackable: Bool? = false,
@@ -438,6 +440,7 @@ struct Item: Identifiable, Codable {
         self.quantity = quantity
         self.isContainer = isContainer
         self.colorHex = colorHex
+        self.bodyColorHex = bodyColorHex
         self.fullnessPct = fullnessPct
         self.boxNumber = boxNumber
         self.stackable = stackable
@@ -486,6 +489,7 @@ struct Item: Identifiable, Codable {
         case itemTypeId = "item_type_id"
         case isContainer = "is_container"
         case colorHex = "color_hex"
+        case bodyColorHex = "body_color_hex"
         case fullnessPct = "fullness_pct"
         case boxNumber = "box_number"
         case stackable

@@ -151,8 +151,8 @@ class StorageManager: ObservableObject {
     func addContainerToSpace(
         name: String, category: ItemCategory, itemType: ItemType?,
         weight: Float?, width: Float, height: Float, depth: Float,
-        stackable: Bool, colorHex: String, notes: String?,
-        productUrl: String?, fullnessPct: Int = 0
+        stackable: Bool, colorHex: String, bodyColorHex: String? = nil,
+        notes: String?, productUrl: String?, fullnessPct: Int = 0
     ) async {
         guard let space = selectedSpace else { return }
         let nextNum = (items.compactMap(\.boxNumber).max() ?? 0) + 1
@@ -162,7 +162,8 @@ class StorageManager: ObservableObject {
             familyId: familyId, spaceId: space.id,
             name: name, category: category, itemTypeId: itemType?.id,
             width: width, height: height, depth: depth, weight: weight,
-            isContainer: true, colorHex: colorHex, fullnessPct: fullnessPct,
+            isContainer: true, colorHex: colorHex, bodyColorHex: bodyColorHex,
+            fullnessPct: fullnessPct,
             boxNumber: nextNum, stackable: stackable,
             posX: pos.0, posY: pos.1, posZ: pos.2,
             shapeHint: itemType?.shapeHint ?? "box",

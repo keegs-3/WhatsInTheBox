@@ -13,6 +13,7 @@ struct AddItemToSpaceView: View {
     @State private var depth: Float = 16
     @State private var stackable = false
     @State private var selectedColor = "#8B6914"
+    @State private var bodyColor = ""  // empty = same as lid, "clear" = transparent
     @State private var notes = ""
     @State private var productUrl = ""
     @State private var isGeneratingShape = false
@@ -94,7 +95,7 @@ struct AddItemToSpaceView: View {
                     }
                 }
 
-                Section("Color") {
+                Section("Lid Color") {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
                         ForEach(boxColors, id: \.self) { hex in
                             Circle().fill(Color(hex: hex) ?? .brown).frame(width: 40, height: 40)
@@ -102,6 +103,17 @@ struct AddItemToSpaceView: View {
                                 .onTapGesture { selectedColor = hex }
                         }
                     }.padding(.vertical, 4)
+                }
+
+                Section("Body Color") {
+                    Picker("Body", selection: $bodyColor) {
+                        Text("Same as Lid").tag("")
+                        Text("Clear / Transparent").tag("clear")
+                        Text("Black").tag("#1C1C1E")
+                        Text("White").tag("#FFFFFF")
+                        Text("Grey").tag("#8E8E93")
+                        Text("Brown (Cardboard)").tag("#8B6914")
+                    }
                 }
 
                 Section("Notes") {
@@ -119,6 +131,7 @@ struct AddItemToSpaceView: View {
                                 name: label, category: category, itemType: selectedType,
                                 weight: weight, width: width, height: height, depth: depth,
                                 stackable: stackable, colorHex: selectedColor,
+                                bodyColorHex: bodyColor.isEmpty ? nil : bodyColor,
                                 notes: notes.isEmpty ? nil : notes,
                                 productUrl: productUrl.isEmpty ? nil : productUrl,
                                 fullnessPct: Int(fullnessPercent)
