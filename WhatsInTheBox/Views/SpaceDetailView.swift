@@ -4,19 +4,18 @@ struct SpaceDetailView: View {
     @EnvironmentObject var manager: StorageManager
     let space: StorageSpace
 
-    @State private var showingAddBox = false
-    @State private var selectedBox: StorageBox?
+    @State private var showingAddItem = false
+    @State private var selectedItem: StorageItem?
     @State private var showScene = true
 
     var body: some View {
         VStack(spacing: 0) {
             if showScene {
-                StorageSceneView(space: space, boxes: manager.boxes, selectedBox: $selectedBox)
+                StorageSceneView(space: space, items: manager.items, selectedItem: $selectedItem)
                     .frame(height: 350)
                     .background(Color(.systemGroupedBackground))
             }
 
-            // Toggle between 3D and list
             Picker("View", selection: $showScene) {
                 Label("3D", systemImage: "cube").tag(true)
                 Label("List", systemImage: "list.bullet").tag(false)
@@ -26,18 +25,17 @@ struct SpaceDetailView: View {
             .padding(.vertical, 8)
 
             if showScene {
-                // Box info panel below 3D view
-                if let box = selectedBox {
-                    BoxInfoPanel(box: box)
+                if let item = selectedItem {
+                    ItemInfoPanel(item: item)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
-                    Text("Tap a box in the 3D view to inspect it")
+                    Text("Tap an item in the 3D view to inspect it")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding()
                 }
             } else {
-                BoxListView(space: space)
+                ItemListView(space: space)
             }
 
             Spacer(minLength: 0)
@@ -46,41 +44,64 @@ struct SpaceDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(action: { showingAddBox = true }) {
+                Button(action: { showingAddItem = true }) {
                     Image(systemName: "plus")
                 }
             }
         }
-        .sheet(isPresented: $showingAddBox) {
-            AddBoxView()
+        .sheet(isPresented: $showingAddItem) {
+            AddItemToSpaceView()
         }
         .task {
-            await manager.loadBoxes(for: space)
+            await manager.loadItems(for: space)
+            await manager.loadItemTypes()
         }
     }
 }
 
-struct BoxInfoPanel: View {
-    let box: StorageBox
+struct ItemInfoPanel: View {
+    let item: StorageItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label("Box #\(box.boxNumber)", systemImage: "shippingbox.fill")
-                    .font(.headline)
+                Label(
+                    item.category == .box ? "Box #\(item.boxNumber)" : item.label,
+                    systemImage: item.category == .box ? "shippingbox.fill" : "cabinet.fill"
+                )
+                .font(.headline)
                 Spacer()
-                if let w = box.weight {
+                if let w = item.weight {
                     Text("\(String(format: "%.1f", w)) lbs")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
-            Text(box.label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text("\(String(format: "%.1f", box.width))×\(String(format: "%.1f", box.depth))×\(String(format: "%.1f", box.height)) ft")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            if item.category == .box {
+                Text(item.label)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 12) {
+                Text("\(String(format: "%.0f", item.width))×\(String(format: "%.0f", item.depth))×\(String(format: "%.0f", item.height))\"")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                if item.stackable {
+                    Label("Stackable", systemImage: "square.stack.3d.up")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+                Text(item.category.rawValue.capitalized)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.fill, in: Capsule())
+            }
+            if let notes = item.notes, !notes.isEmpty {
+                Text(notes)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))

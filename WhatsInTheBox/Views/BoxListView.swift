@@ -1,30 +1,39 @@
 import SwiftUI
 
-struct BoxListView: View {
+struct ItemListView: View {
     @EnvironmentObject var manager: StorageManager
     let space: StorageSpace
 
     var body: some View {
         List {
-            ForEach(manager.boxes) { box in
-                NavigationLink(destination: BoxDetailView(box: box)) {
+            ForEach(manager.items) { item in
+                NavigationLink(destination: BoxDetailView(item: item)) {
                     HStack {
                         ZStack {
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color(hex: box.colorHex) ?? .brown)
+                                .fill(Color(hex: item.colorHex) ?? .brown)
                                 .frame(width: 44, height: 44)
-                            Text("#\(box.boxNumber)")
-                                .font(.caption.bold())
-                                .foregroundStyle(.white)
+                            if item.category == .box {
+                                Text("#\(item.boxNumber)")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.white)
+                            } else {
+                                Image(systemName: iconFor(item.category))
+                                    .foregroundStyle(.white)
+                            }
                         }
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(box.label)
+                            Text(item.label)
                                 .font(.headline)
                             HStack(spacing: 12) {
-                                if let w = box.weight {
+                                if let w = item.weight {
                                     Label("\(String(format: "%.0f", w)) lbs", systemImage: "scalemass")
                                 }
-                                Label("\(String(format: "%.1f", box.width))×\(String(format: "%.1f", box.depth))×\(String(format: "%.1f", box.height))", systemImage: "cube")
+                                Label("\(String(format: "%.0f", item.width))×\(String(format: "%.0f", item.depth))×\(String(format: "%.0f", item.height))\"", systemImage: "cube")
+                                if item.stackable {
+                                    Image(systemName: "square.stack.3d.up")
+                                        .foregroundStyle(.green)
+                                }
                             }
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -36,15 +45,22 @@ struct BoxListView: View {
             .onDelete { indexSet in
                 Task {
                     for index in indexSet {
-                        await manager.deleteBox(manager.boxes[index])
+                        await manager.deleteItem(manager.items[index])
                     }
                 }
             }
         }
     }
-}
 
-// MARK: - Color hex helper for SwiftUI
+    private func iconFor(_ category: ItemCategory) -> String {
+        switch category {
+        case .box: return "shippingbox"
+        case .furniture: return "cabinet"
+        case .appliance: return "washer"
+        case .misc: return "archivebox"
+        }
+    }
+}
 
 extension Color {
     init?(hex: String) {
