@@ -25,29 +25,21 @@ struct ContentView: View {
                         .padding(.top, 40)
                     } else {
                         ForEach(groupedLocations, id: \.0) { type, locations in
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 // Section header
-                                HStack {
-                                    Image(systemName: type.iconName)
-                                        .foregroundStyle(Color.accentColor)
-                                    Text(type.displayName)
-                                        .font(.headline)
-                                }
-                                .padding(.horizontal)
+                                Text(type.displayName.uppercased())
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
 
-                                // 2-column grid
-                                LazyVGrid(columns: [
-                                    GridItem(.flexible(), spacing: 12),
-                                    GridItem(.flexible(), spacing: 12)
-                                ], spacing: 12) {
-                                    ForEach(locations) { location in
-                                        NavigationLink(destination: LocationDetailView(location: location)) {
-                                            LocationCard(location: location, isSelected: false, spaceCount: 0)
-                                        }
-                                        .buttonStyle(.plain)
+                                // Full-width cards
+                                ForEach(locations) { location in
+                                    NavigationLink(destination: LocationDetailView(location: location)) {
+                                        LocationCard(location: location)
                                     }
+                                    .buttonStyle(.plain)
+                                    .padding(.horizontal)
                                 }
-                                .padding(.horizontal)
                             }
                         }
                     }
@@ -251,36 +243,72 @@ struct MenuSheet: View {
 
 struct LocationCard: View {
     let location: Location
-    let isSelected: Bool
-    let spaceCount: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header row
+            HStack(alignment: .top) {
                 Image(systemName: location.displayIcon)
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(Color.accentColor)
+                    .frame(width: 40, height: 40)
+                    .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(location.name)
+                        .font(.headline)
+                    Text(location.locationType.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Spacer()
+
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
+                    .padding(.top, 4)
             }
 
-            Text(location.name)
-                .font(.subheadline.bold())
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-
+            // Details
             if let addr = location.address, !addr.isEmpty {
-                Text(addr)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                Label {
+                    Text(addr)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                } icon: {
+                    Image(systemName: "mappin.circle.fill")
+                        .foregroundStyle(.red)
+                }
+            }
+
+            // Bottom row: quick stats
+            HStack(spacing: 16) {
+                if let phone = location.phone, !phone.isEmpty {
+                    Label(phone, systemImage: "phone.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let hours = location.accessHours, !hours.isEmpty {
+                    Label(hours, systemImage: "clock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        .padding(16)
+        .background {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+        }
     }
 }
 
