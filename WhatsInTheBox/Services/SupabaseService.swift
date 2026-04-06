@@ -57,7 +57,7 @@ class SupabaseService {
     func fetchSpaceItems(for spaceId: UUID) async throws -> [Item] {
         try await client.from("items").select()
             .eq("space_id", value: spaceId.uuidString)
-            .is("parent_id", value: "null")
+            .is("parent_id", value: nil)
             .order("box_number")
             .execute().value
     }
@@ -74,8 +74,8 @@ class SupabaseService {
     func fetchInventory(familyId: UUID) async throws -> [Item] {
         try await client.from("items").select()
             .eq("family_id", value: familyId.uuidString)
-            .is("space_id", value: "null")
-            .is("parent_id", value: "null")
+            .is("space_id", value: nil)
+            .is("parent_id", value: nil)
             .order("name")
             .execute().value
     }

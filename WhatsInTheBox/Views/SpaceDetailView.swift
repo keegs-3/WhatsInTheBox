@@ -11,7 +11,13 @@ struct SpaceDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             if showScene {
-                StorageSceneView(space: space, items: manager.items, selectedItem: $selectedItem)
+                StorageSceneView(space: space, items: manager.items, selectedItem: $selectedItem) { movedItem, x, y, z in
+                    var updated = movedItem
+                    updated.posX = x
+                    updated.posY = y
+                    updated.posZ = z
+                    Task { await manager.updateItem(updated) }
+                }
                     .frame(height: 350)
                     .background(Color(.systemGroupedBackground))
             }

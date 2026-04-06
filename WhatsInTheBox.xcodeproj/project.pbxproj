@@ -7,27 +7,28 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* WhatsInTheBoxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001; };
-		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
-		A10003 /* StorageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003; };
-		A10004 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004; };
-		A10005 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005; };
-		A10006 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006; };
-		A10007 /* SpaceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007; };
-		A10008 /* StorageSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008; };
-		A10009 /* BoxListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009; };
-		A10010 /* BoxDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010; };
-		A10011 /* AddSpaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011; };
-		A10012 /* AddBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
-		A10013 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10013; };
-		A10014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10014; };
-		A10015 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10015; };
-		A10020 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = D10001; };
-		A10030 /* FamilyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
-		A10031 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
-		A10032 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
-		A10033 /* FamilySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
-		A10034 /* AddLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
+		A10001 /* WhatsInTheBoxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* WhatsInTheBoxApp.swift */; };
+		A10002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* ContentView.swift */; };
+		A10003 /* StorageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* StorageModels.swift */; };
+		A10004 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004 /* SupabaseService.swift */; };
+		A10005 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005 /* Config.swift */; };
+		A10006 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006 /* StorageManager.swift */; };
+		A10007 /* SpaceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007 /* SpaceDetailView.swift */; };
+		A10008 /* StorageSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008 /* StorageSceneView.swift */; };
+		A10009 /* BoxListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009 /* BoxListView.swift */; };
+		A10010 /* BoxDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010 /* BoxDetailView.swift */; };
+		A10011 /* AddSpaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011 /* AddSpaceView.swift */; };
+		A10012 /* AddBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012 /* AddBoxView.swift */; };
+		A10013 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10013 /* AddItemView.swift */; };
+		A10014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10014 /* Assets.xcassets */; };
+		A10015 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10015 /* Preview Assets.xcassets */; };
+		A10020 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = D10001 /* Supabase */; };
+		A10030 /* FamilyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030 /* FamilyModels.swift */; };
+		A10031 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031 /* AuthManager.swift */; };
+		A10032 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032 /* AuthView.swift */; };
+		A10033 /* FamilySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* FamilySetupView.swift */; };
+		A10034 /* AddLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* AddLocationView.swift */; };
+		A10035 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* InventoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,12 +47,13 @@
 		B10013 /* AddItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemView.swift; sourceTree = "<group>"; };
 		B10014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10015 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		C10001 /* WhatsInTheBox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhatsInTheBox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10030 /* FamilyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyModels.swift; sourceTree = "<group>"; };
 		B10031 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		B10032 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		B10033 /* FamilySetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySetupView.swift; sourceTree = "<group>"; };
 		B10034 /* AddLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLocationView.swift; sourceTree = "<group>"; };
+		B10035 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
+		C10001 /* WhatsInTheBox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhatsInTheBox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +112,7 @@
 				B10012 /* AddBoxView.swift */,
 				B10013 /* AddItemView.swift */,
 				B10034 /* AddLocationView.swift */,
+				B10035 /* InventoryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -146,7 +149,7 @@
 /* Begin PBXNativeTarget section */
 		T10001 /* WhatsInTheBox */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = X10003;
+			buildConfigurationList = X10003 /* Build configuration list for PBXNativeTarget "WhatsInTheBox" */;
 			buildPhases = (
 				E10002 /* Sources */,
 				E10001 /* Frameworks */,
@@ -179,7 +182,7 @@
 					};
 				};
 			};
-			buildConfigurationList = X10001;
+			buildConfigurationList = X10001 /* Build configuration list for PBXProject "WhatsInTheBox" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -235,6 +238,7 @@
 				A10032 /* AuthView.swift in Sources */,
 				A10033 /* FamilySetupView.swift in Sources */,
 				A10034 /* AddLocationView.swift in Sources */,
+				A10035 /* InventoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +305,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"WhatsInTheBox/Preview Content\"";
+				DEVELOPMENT_TEAM = 58G42BAZ53;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -329,6 +334,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"WhatsInTheBox/Preview Content\"";
+				DEVELOPMENT_TEAM = 58G42BAZ53;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

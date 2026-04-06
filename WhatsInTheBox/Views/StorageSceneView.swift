@@ -6,6 +6,8 @@ struct StorageSceneView: UIViewRepresentable {
     let items: [Item]
     @Binding var selectedItem: Item?
 
+    var onItemMoved: ((Item, Float, Float, Float) -> Void)?
+
     func makeUIView(context: Context) -> SCNView {
         let scnView = SCNView()
         scnView.allowsCameraControl = true
@@ -15,6 +17,14 @@ struct StorageSceneView: UIViewRepresentable {
 
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         scnView.addGestureRecognizer(tapGesture)
+
+        let panGesture = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
+        panGesture.minimumNumberOfTouches = 1
+        panGesture.maximumNumberOfTouches = 1
+        scnView.addGestureRecognizer(panGesture)
+
+        // Let pan take priority — camera orbit needs 2 fingers
+        scnView.allowsCameraControl = true
 
         scnView.scene = buildScene()
         context.coordinator.scnView = scnView
@@ -137,6 +147,9 @@ struct StorageSceneView: UIViewRepresentable {
         var parent: StorageSceneView
         var scnView: SCNView?
         var items: [Item] = []
+        var draggedNode: SCNNode?
+        var draggedItem: Item?
+        var dragStartPos: SCNVector3?
 
         init(_ parent: StorageSceneView) {
             self.parent = parent
@@ -160,12 +173,69 @@ struct StorageSceneView: UIViewRepresentable {
             }
             parent.selectedItem = nil
         }
+
+        @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
+            guard let scnView = scnView else { return }
+
+            switch gesture.state {
+            case .began:
+                let location = gesture.location(in: scnView)
+                let hitResults = scnView.hitTest(location, options: [.searchMode: SCNHitTestSearchMode.all.rawValue])
+                for result in hitResults {
+                    var node: SCNNode? = result.node
+                    while let current = node {
+                        if let name = current.name, let _ = UUID(uuidString: name) {
+                            draggedNode = current
+                            dragStartPos = current.position
+                            draggedItem = items.first { $0.id.uuidString == name }
+                            // Disable camera control while dragging
+                            scnView.allowsCameraControl = false
+                            return
+                        }
+                        node = current.parent
+                    }
+                }
+
+            case .changed:
+                guard let node = draggedNode, let startPos = dragStartPos else { return }
+                let translation = gesture.translation(in: scnView)
+                // Scale screen points to scene units (rough approximation)
+                let scale: Float = 0.01
+                let newX = startPos.x + Float(translation.x) * scale
+                let newZ = startPos.z + Float(translation.y) * scale
+                // Clamp to space bounds
+                let spaceW = parent.space.width
+                let spaceD = parent.space.depth
+                node.position = SCNVector3(
+                    max(0.5, min(spaceW - 0.5, newX)),
+                    startPos.y,
+                    max(0.5, min(spaceD - 0.5, newZ))
+                )
+
+            case .ended, .cancelled:
+                if let node = draggedNode, let item = draggedItem {
+                    let wFt = item.widthFeet
+                    let dFt = item.depthFeet
+                    let finalX = node.position.x - wFt / 2
+                    let finalZ = node.position.z - dFt / 2
+                    parent.onItemMoved?(item, finalX, node.position.y, finalZ)
+                    parent.selectedItem = item
+                }
+                draggedNode = nil
+                draggedItem = nil
+                dragStartPos = nil
+                scnView.allowsCameraControl = true
+
+            default:
+                break
+            }
+        }
     }
 }
 
 extension UIColor {
     convenience init?(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
+        let hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
         guard hexSanitized.count == 6 else { return nil }
         var rgb: UInt64 = 0
         Scanner(string: hexSanitized).scanHexInt64(&rgb)

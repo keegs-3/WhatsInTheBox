@@ -7,12 +7,23 @@ struct ContentView: View {
     @State private var showingAddSpace = false
     @State private var showingLocationDetail = false
     @State private var confirmDeleteLocation = false
+    @State private var activeTab = 0  // 0 = Locations, 1 = Inventory
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // MARK: - Location Cards (horizontal scroll)
-                if !manager.locations.isEmpty {
+                // MARK: - Tab Picker
+                Picker("View", selection: $activeTab) {
+                    Text("Locations").tag(0)
+                    Text("Inventory").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.top, 8)
+
+                if activeTab == 1 {
+                    InventoryView()
+                } else if !manager.locations.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(manager.locations) { location in
