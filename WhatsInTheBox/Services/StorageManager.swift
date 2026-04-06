@@ -279,6 +279,32 @@ class StorageManager: ObservableObject {
         inventoryItems.removeAll { $0.id == item.id }
     }
 
+    // MARK: - Standalone Box Creation
+
+    func addBox(
+        name: String, category: ItemCategory = .box,
+        width: Float, height: Float, depth: Float,
+        weight: Float? = nil, stackable: Bool = false,
+        colorHex: String = "#FF6600", bodyColorHex: String? = nil,
+        notes: String? = nil, itemTypeId: UUID? = nil
+    ) async {
+        let nextNum = (allBoxes.compactMap(\.boxNumber).max() ?? 0) + 1
+        let item = Item(
+            familyId: familyId,
+            name: name, category: category, itemTypeId: itemTypeId,
+            width: width, height: height, depth: depth, weight: weight,
+            isContainer: true, colorHex: colorHex, bodyColorHex: bodyColorHex,
+            fullnessPct: 0, boxNumber: nextNum, stackable: stackable,
+            notes: notes
+        )
+        do {
+            let created = try await service.createItem(item)
+            allBoxes.append(created)
+        } catch {
+            errorMessage = "Failed to create box: \(error.localizedDescription)"
+        }
+    }
+
     // MARK: - All Boxes (cross-space view)
 
     func loadAllBoxes() async {

@@ -105,31 +105,23 @@ struct TabBarButton: View {
 struct QuickAddSheet: View {
     @EnvironmentObject var manager: StorageManager
     @Environment(\.dismiss) private var dismiss
-    @State private var showAddLocation = false
-    @State private var showAddInventory = false
-    @State private var showAddBox = false
-    @State private var showAddSpace = false
+    @State private var destination: QuickAddDestination?
+
+    enum QuickAddDestination: Identifiable {
+        case location, space, box, inventory
+        var id: Self { self }
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Add to Storage") {
-                    Button {
-                        dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showAddLocation = true
-                        }
-                    } label: {
+                    Button { destination = .location } label: {
                         QuickAddRow(icon: "building.2.fill", title: "New Location",
                                     subtitle: "Storage facility, house, garage", color: .blue)
                     }
 
-                    Button {
-                        dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showAddSpace = true
-                        }
-                    } label: {
+                    Button { destination = .space } label: {
                         QuickAddRow(icon: "door.left.hand.open", title: "New Unit / Space",
                                     subtitle: "Room or storage unit in current location", color: .indigo)
                     }
@@ -137,23 +129,12 @@ struct QuickAddSheet: View {
                 }
 
                 Section("Add Items") {
-                    Button {
-                        dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showAddBox = true
-                        }
-                    } label: {
+                    Button { destination = .box } label: {
                         QuickAddRow(icon: "shippingbox.fill", title: "New Box / Container",
-                                    subtitle: "Add a box to the current space", color: .orange)
+                                    subtitle: "Create a box (assign to space later)", color: .orange)
                     }
-                    .disabled(manager.selectedSpace == nil)
 
-                    Button {
-                        dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showAddInventory = true
-                        }
-                    } label: {
+                    Button { destination = .inventory } label: {
                         QuickAddRow(icon: "tray.and.arrow.down.fill", title: "New Inventory Item",
                                     subtitle: "Add an item to your inventory", color: .green)
                     }
@@ -169,11 +150,137 @@ struct QuickAddSheet: View {
                     }
                 }
             }
+            .sheet(item: $destination) { dest in
+                switch dest {
+                case .location: AddLocationView()
+                case .space: AddSpaceView()
+                case .box: AddBoxStandaloneView()
+                case .inventory: AddInventoryItemView()
+                }
+            }
         }
-        .sheet(isPresented: $showAddLocation) { AddLocationView() }
-        .sheet(isPresented: $showAddSpace) { AddSpaceView() }
-        .sheet(isPresented: $showAddBox) { AddItemToSpaceView() }
-        .sheet(isPresented: $showAddInventory) { AddInventoryItemView() }
+    }
+}
+
+// MARK: - Add Box (standalone, not tied to a space)
+
+struct AddBoxStandaloneView: View {
+    @EnvironmentObject var manager: StorageManager
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name = ""
+    @State private var category: ItemCategory = .box
+    @State private var selectedType: ItemType?
+    @State private var weight: Float?
+    @State private var width: Float = 18
+    @State private var height: Float = 18
+    @State private var depth: Float = 16
+    @State private var stackable = false
+    @State private var lidColor = "#FF6600"
+    @State private var bodyColor = ""
+    @State private var notes = ""
+
+    private let boxColors = [
+        "#8B6914", "#D2691E", "#FF6600", "#4A90D9",
+        "#2ECC71", "#E74C3C", "#9B59B6", "#F39C12",
+        "#1ABC9C", "#1A5276", "#6B3A2A", "#C4A35A",
+    ]
+
+    private var filteredTypes: [ItemType] {
+        manager.itemTypes.filter { $0.category == category }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Type") {
+                    Picker("Category", selection: $category) {
+                        Text("Box").tag(ItemCategory.box)
+                        Text("Tote").tag(ItemCategory.tote)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                if !filteredTypes.isEmpty {
+                    Section("Preset") {
+                        Picker("Select", selection: $selectedType) {
+                            Text("Custom").tag(nil as ItemType?)
+                            ForEach(filteredTypes) { type in
+                                Text(type.displayName).tag(type as ItemType?)
+                            }
+                        }
+                        .onChange(of: selectedType) { _, t in
+                            if let t {
+                                width = t.width; height = t.height; depth = t.depth
+                                stackable = t.stackable
+                                if let c = t.colorHex { lidColor = c }
+                                if name.isEmpty { name = t.displayName }
+                            }
+                        }
+                    }
+                }
+
+                Section("Info") {
+                    TextField("Name (e.g. \"Kitchen #1\")", text: $name)
+                    HStack {
+                        Text("Weight (lbs)")
+                        Spacer()
+                        TextField("lbs", value: $weight, format: .number)
+                            .keyboardType(.decimalPad).frame(width: 80).multilineTextAlignment(.trailing)
+                    }
+                    Toggle("Stackable", isOn: $stackable)
+                }
+
+                Section("Dimensions (inches)") {
+                    HStack { Text("Width"); Spacer(); TextField("W", value: $width, format: .number).keyboardType(.decimalPad).frame(width: 80).multilineTextAlignment(.trailing) }
+                    HStack { Text("Height"); Spacer(); TextField("H", value: $height, format: .number).keyboardType(.decimalPad).frame(width: 80).multilineTextAlignment(.trailing) }
+                    HStack { Text("Depth"); Spacer(); TextField("D", value: $depth, format: .number).keyboardType(.decimalPad).frame(width: 80).multilineTextAlignment(.trailing) }
+                }
+
+                Section("Lid Color") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 10) {
+                        ForEach(boxColors, id: \.self) { hex in
+                            Circle().fill(Color(hex: hex) ?? .brown).frame(width: 36, height: 36)
+                                .overlay(Circle().stroke(Color.primary, lineWidth: lidColor == hex ? 3 : 0))
+                                .onTapGesture { lidColor = hex }
+                        }
+                    }
+                }
+
+                Section("Body Color") {
+                    Picker("Body", selection: $bodyColor) {
+                        Text("Same as Lid").tag("")
+                        Text("Clear / Transparent").tag("clear")
+                        Text("Black").tag("#1C1C1E")
+                        Text("White").tag("#FFFFFF")
+                        Text("Brown (Cardboard)").tag("#8B6914")
+                    }
+                }
+            }
+            .navigationTitle("New Box")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Create") {
+                        Task {
+                            await manager.addBox(
+                                name: name.isEmpty ? (selectedType?.displayName ?? "Box") : name,
+                                category: category,
+                                width: width, height: height, depth: depth,
+                                weight: weight, stackable: stackable,
+                                colorHex: lidColor,
+                                bodyColorHex: bodyColor.isEmpty ? nil : bodyColor,
+                                itemTypeId: selectedType?.id
+                            )
+                            dismiss()
+                        }
+                    }
+                    .disabled(name.isEmpty && selectedType == nil)
+                }
+            }
+            .task { await manager.loadItemTypes() }
+        }
     }
 }
 
