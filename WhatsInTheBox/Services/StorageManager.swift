@@ -315,7 +315,7 @@ class StorageManager: ObservableObject {
                 .select()
                 .eq("family_id", value: fid.uuidString)
                 .eq("is_container", value: true)
-                .order("box_number")
+                .order("created_at")
                 .execute()
                 .value
             allBoxes = all

@@ -8,12 +8,24 @@ struct BoxDetailView: View {
     @State private var fullness: Double = 0
     @State private var isEditing = false
 
+    // Editable fields
     @State private var editName = ""
     @State private var editNumber: Int = 0
     @State private var editWeight = ""
     @State private var editNotes = ""
+    @State private var editWidth = ""
+    @State private var editHeight = ""
+    @State private var editDepth = ""
+    @State private var editStackable = false
+    @State private var editLidColor = "#FF6600"
+    @State private var editBodyColor = ""
 
-    /// Computed total weight = own weight + children weights
+    private let boxColors = [
+        "#8B6914", "#D2691E", "#FF6600", "#4A90D9",
+        "#2ECC71", "#E74C3C", "#9B59B6", "#F39C12",
+        "#1ABC9C", "#1A5276", "#6B3A2A", "#C4A35A",
+    ]
+
     private var totalWeight: Float {
         let base = item.weight ?? 0
         let childWeight = manager.children.compactMap(\.weight).reduce(0, +)
@@ -22,7 +34,7 @@ struct BoxDetailView: View {
 
     var body: some View {
         List {
-            // MARK: - Box Visual
+            // Box Visual
             if item.isContainer {
                 Section {
                     BoxVisual(item: item, fullness: fullness, totalWeight: totalWeight)
@@ -47,35 +59,29 @@ struct BoxDetailView: View {
                 }
             }
 
-            // MARK: - Info
+            // Info
             Section("Info") {
                 if isEditing {
-                    HStack {
-                        Text("Name")
-                        Spacer()
-                        TextField("Name", text: $editName)
-                            .multilineTextAlignment(.trailing)
-                    }
+                    TextField("Name", text: $editName)
                     if item.isContainer {
-                        HStack {
-                            Text("Number")
-                            Spacer()
+                        HStack { Text("Number"); Spacer()
                             TextField("#", value: $editNumber, format: .number)
-                                .keyboardType(.numberPad)
-                                .frame(width: 60)
-                                .multilineTextAlignment(.trailing)
-                        }
+                                .keyboardType(.numberPad).frame(width: 60).multilineTextAlignment(.trailing) }
                     }
-                    HStack {
-                        Text("Weight (lbs)")
-                        Spacer()
+                    HStack { Text("Weight (lbs)"); Spacer()
                         TextField("lbs", text: $editWeight)
-                            .keyboardType(.decimalPad)
-                            .frame(width: 80)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    TextField("Notes", text: $editNotes, axis: .vertical)
-                        .lineLimit(2...4)
+                            .keyboardType(.decimalPad).frame(width: 80).multilineTextAlignment(.trailing) }
+                    HStack { Text("Width (in)"); Spacer()
+                        TextField("W", text: $editWidth)
+                            .keyboardType(.decimalPad).frame(width: 60).multilineTextAlignment(.trailing) }
+                    HStack { Text("Height (in)"); Spacer()
+                        TextField("H", text: $editHeight)
+                            .keyboardType(.decimalPad).frame(width: 60).multilineTextAlignment(.trailing) }
+                    HStack { Text("Depth (in)"); Spacer()
+                        TextField("D", text: $editDepth)
+                            .keyboardType(.decimalPad).frame(width: 60).multilineTextAlignment(.trailing) }
+                    Toggle("Stackable", isOn: $editStackable)
+                    TextField("Notes", text: $editNotes, axis: .vertical).lineLimit(2...4)
                 } else {
                     if let num = item.boxNumber { LabeledContent("Number", value: "#\(num)") }
                     LabeledContent("Name", value: item.name)
@@ -100,7 +106,29 @@ struct BoxDetailView: View {
                 }
             }
 
-            // MARK: - Label
+            // Colors (edit mode)
+            if isEditing && item.isContainer {
+                Section("Lid Color") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 10) {
+                        ForEach(boxColors, id: \.self) { hex in
+                            Circle().fill(Color(hex: hex) ?? .brown).frame(width: 32, height: 32)
+                                .overlay(Circle().stroke(Color.primary, lineWidth: editLidColor == hex ? 3 : 0))
+                                .onTapGesture { editLidColor = hex }
+                        }
+                    }
+                }
+                Section("Body Color") {
+                    Picker("Body", selection: $editBodyColor) {
+                        Text("Same as Lid").tag("")
+                        Text("Clear / Transparent").tag("clear")
+                        Text("Black").tag("#1C1C1E")
+                        Text("White").tag("#FFFFFF")
+                        Text("Brown").tag("#8B6914")
+                    }
+                }
+            }
+
+            // Label
             if item.isContainer {
                 Section {
                     Button { showingLabelCreator = true } label: {
@@ -109,7 +137,7 @@ struct BoxDetailView: View {
                 }
             }
 
-            // MARK: - Contents
+            // Contents
             if item.isContainer {
                 Section("Contents (\(manager.children.count) items)") {
                     if manager.children.isEmpty {
@@ -168,42 +196,30 @@ struct BoxDetailView: View {
     private func childRow(_ child: Item) -> some View {
         HStack {
             if let icon = child.icon {
-                Image(systemName: icon)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24)
+                Image(systemName: icon).foregroundStyle(.secondary).frame(width: 24)
             }
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text(child.name)
                     if child.isContainer {
-                        Image(systemName: "shippingbox")
-                            .font(.caption2)
-                            .foregroundStyle(.orange)
+                        Image(systemName: "shippingbox").font(.caption2).foregroundStyle(.orange)
                     }
                     Spacer()
                     if child.quantity > 1 {
                         Text("×\(child.quantity)")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
+                            .font(.caption).padding(.horizontal, 8).padding(.vertical, 2)
                             .background(.fill, in: Capsule())
                     }
                 }
                 HStack(spacing: 8) {
                     if let w = child.weight {
-                        Text("\(String(format: "%.1f", w)) lbs")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                        Text("\(String(format: "%.1f", w)) lbs").font(.caption2).foregroundStyle(.secondary)
                     }
                     if child.isBreakable == true {
-                        Label("Fragile", systemImage: "exclamationmark.triangle")
-                            .font(.caption2)
-                            .foregroundStyle(.red)
+                        Label("Fragile", systemImage: "exclamationmark.triangle").font(.caption2).foregroundStyle(.red)
                     }
                     if child.isWrapped == true {
-                        Label("Wrapped", systemImage: "checkmark.shield")
-                            .font(.caption2)
-                            .foregroundStyle(.green)
+                        Label("Wrapped", systemImage: "checkmark.shield").font(.caption2).foregroundStyle(.green)
                     }
                 }
             }
@@ -216,6 +232,12 @@ struct BoxDetailView: View {
         editNumber = item.boxNumber ?? 0
         editWeight = item.weight.map { String(format: "%.1f", $0) } ?? ""
         editNotes = item.notes ?? ""
+        editWidth = item.width.map { String(format: "%.0f", $0) } ?? ""
+        editHeight = item.height.map { String(format: "%.0f", $0) } ?? ""
+        editDepth = item.depth.map { String(format: "%.0f", $0) } ?? ""
+        editStackable = item.stackable ?? false
+        editLidColor = item.colorHex ?? "#FF6600"
+        editBodyColor = item.bodyColorHex ?? ""
     }
 
     private func saveEdits() {
@@ -223,6 +245,12 @@ struct BoxDetailView: View {
         item.boxNumber = editNumber
         item.weight = Float(editWeight)
         item.notes = editNotes.isEmpty ? nil : editNotes
+        item.width = Float(editWidth)
+        item.height = Float(editHeight)
+        item.depth = Float(editDepth)
+        item.stackable = editStackable
+        item.colorHex = editLidColor
+        item.bodyColorHex = editBodyColor.isEmpty ? nil : editBodyColor
         Task { await manager.updateItem(item) }
     }
 
@@ -240,23 +268,25 @@ struct BoxVisual: View {
     let fullness: Double
     let totalWeight: Float
 
+    private var bodyFill: Color {
+        let raw = item.bodyColorHex ?? ""
+        if raw.lowercased() == "clear" { return Color(.systemGray6).opacity(0.3) }
+        return Color(hex: raw) ?? Color(.systemGray6)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Colored lid
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(hex: item.colorHex ?? "#8B6914") ?? .brown)
                 .frame(height: 24)
                 .overlay {
                     HStack(spacing: 6) {
-                        if let num = item.boxNumber {
-                            Text("#\(num)").font(.caption.bold()).foregroundStyle(.white)
-                        }
+                        if let num = item.boxNumber { Text("#\(num)").font(.caption.bold()).foregroundStyle(.white) }
                         Text(item.name).font(.caption).foregroundStyle(.white.opacity(0.9)).lineLimit(1)
                     }
                 }
                 .padding(.horizontal, 4)
 
-            // Body
             RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(bodyFill)
                 .frame(height: 80)
@@ -270,22 +300,13 @@ struct BoxVisual: View {
                             Text("\(Int(fullness))%").font(.system(size: 11, weight: .bold))
                         }
                         if totalWeight > 0 {
-                            Text("\(String(format: "%.0f", totalWeight)) lbs")
-                                .font(.system(size: 10)).foregroundStyle(.secondary)
+                            Text("\(String(format: "%.0f", totalWeight)) lbs").font(.system(size: 10)).foregroundStyle(.secondary)
                         }
                     }
                 }
                 .padding(.horizontal, 8)
         }
         .padding(.vertical, 8)
-    }
-
-    private var bodyFill: Color {
-        let raw = item.bodyColorHex ?? ""
-        if raw.lowercased() == "clear" {
-            return Color(.systemGray6).opacity(0.3)
-        }
-        return Color(hex: raw) ?? Color(.systemGray6)
     }
 
     private func fullnessColor(_ percent: Int) -> Color {
@@ -300,7 +321,6 @@ struct BoxVisual: View {
 struct LabelCreatorView: View {
     @Environment(\.dismiss) private var dismiss
     let item: Item
-
     @State private var labelText = ""
     @State private var labelShape: LabelShape = .roundedSquare
     @State private var labelColor = "#FF6600"
@@ -313,7 +333,6 @@ struct LabelCreatorView: View {
             switch self { case .circle: return "Circle"; case .square: return "Square"; case .roundedSquare: return "Rounded" }
         }
     }
-
     enum LabelSize: String, CaseIterable {
         case small, medium, large
         var dimension: CGFloat { switch self { case .small: return 120; case .medium: return 180; case .large: return 260 } }
@@ -347,12 +366,10 @@ struct LabelCreatorView: View {
                                 .onTapGesture { labelColor = hex }
                         }
                     }
-                }
-                .padding(.horizontal, 24)
+                }.padding(.horizontal, 24)
                 Spacer()
             }
-            .navigationTitle("Label Creator")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Label Creator").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .onAppear { labelText = item.name; labelColor = item.colorHex ?? "#FF6600" }
         }

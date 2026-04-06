@@ -5,6 +5,7 @@ struct InventoryView: View {
     @State private var showingAddItem = false
     @State private var searchText = ""
     @State private var filterCategory: ItemCategory?
+    @State private var itemToAssign: Item?
 
     private var filteredItems: [Item] {
         var result = manager.inventoryItems
@@ -48,6 +49,14 @@ struct InventoryView: View {
                         Section(category) {
                             ForEach(items) { item in
                                 InventoryRow(item: item)
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            itemToAssign = item
+                                        } label: {
+                                            Label("Add to Box", systemImage: "shippingbox")
+                                        }
+                                        .tint(.orange)
+                                    }
                             }
                             .onDelete { indexSet in
                                 Task {
@@ -75,7 +84,66 @@ struct InventoryView: View {
         .navigationTitle("Inventory")
         .task {
             await manager.loadInventory()
+            await manager.loadAllBoxes()
         }
+        .sheet(item: $itemToAssign) { item in
+            AssignToBoxSheet(item: item)
+        }
+        }
+    }
+}
+
+// MARK: - Assign to Box Sheet
+
+struct AssignToBoxSheet: View {
+    @EnvironmentObject var manager: StorageManager
+    @Environment(\.dismiss) private var dismiss
+    let item: Item
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if manager.allBoxes.isEmpty {
+                    ContentUnavailableView(
+                        "No Boxes",
+                        systemImage: "shippingbox",
+                        description: Text("Create a box first, then assign items to it")
+                    )
+                } else {
+                    List {
+                        ForEach(manager.allBoxes) { box in
+                            Button {
+                                Task {
+                                    await manager.assignToContainer(item, containerId: box.id)
+                                    dismiss()
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color(hex: box.colorHex ?? "#8B6914") ?? .brown)
+                                            .frame(width: 36, height: 36)
+                                        if let num = box.boxNumber {
+                                            Text("#\(num)").font(.caption2.bold()).foregroundStyle(.white)
+                                        }
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(box.name).font(.body)
+                                        Text("\(box.fullnessPct ?? 0)% full")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Assign \"\(item.name)\"")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
         }
     }
 }
