@@ -14,7 +14,7 @@ struct AuthView: View {
 
                 Image(systemName: "shippingbox.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
 
                 Text("What's In The Box?")
                     .font(.largeTitle.bold())

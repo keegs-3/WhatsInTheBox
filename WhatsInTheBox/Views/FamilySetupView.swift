@@ -17,7 +17,7 @@ struct FamilySetupView: View {
 
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
 
                 Text("Set Up Your Family")
                     .font(.title.bold())

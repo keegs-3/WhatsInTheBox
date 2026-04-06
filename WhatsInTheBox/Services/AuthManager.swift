@@ -37,6 +37,8 @@ class AuthManager: ObservableObject {
                 password: password,
                 data: ["display_name": .string(displayName)]
             )
+            // Sign in immediately after sign up
+            try await client.auth.signIn(email: email, password: password)
             isAuthenticated = true
         } catch {
             errorMessage = error.localizedDescription

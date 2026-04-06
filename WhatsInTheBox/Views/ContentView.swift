@@ -164,7 +164,7 @@ struct LocationCard: View {
             HStack {
                 Image(systemName: location.displayIcon)
                     .font(.title3)
-                    .foregroundStyle(isSelected ? .white : .accent)
+                    .foregroundStyle(isSelected ? .white : Color.accentColor)
                 Spacer()
             }
             Spacer()
@@ -199,7 +199,7 @@ struct SpaceCard: View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: "cube.transparent")
                 .font(.title2)
-                .foregroundStyle(.accent)
+                .foregroundStyle(Color.accentColor)
 
             Text(space.name)
                 .font(.headline)
