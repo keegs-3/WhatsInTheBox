@@ -7,52 +7,55 @@ struct ContentView: View {
     @State private var showingAddSpace = false
     @State private var showMenu = false
 
+    private var groupedLocations: [(LocationType, [Location])] {
+        let grouped = Dictionary(grouping: manager.locations) { $0.locationType }
+        return grouped.sorted { $0.key.displayName < $1.key.displayName }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Location cards
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(manager.locations) { location in
-                                NavigationLink(destination: LocationDetailView(location: location)) {
-                                    LocationCard(
-                                        location: location,
-                                        isSelected: manager.selectedLocation?.id == location.id,
-                                        spaceCount: 0
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .simultaneousGesture(TapGesture().onEnded {
-                                    Task { await manager.selectLocation(location) }
-                                })
-                            }
-
-                            Button { showingAddLocation = true } label: {
-                                VStack(spacing: 8) {
-                                    Image(systemName: "plus.circle.fill").font(.title2)
-                                    Text("Add Location").font(.caption2)
-                                }
-                                .frame(width: 140, height: 90)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal)
-                    }
-
+                VStack(alignment: .leading, spacing: 20) {
                     if manager.locations.isEmpty {
                         ContentUnavailableView(
                             "No Locations Yet",
                             systemImage: "building.2",
                             description: Text("Tap + to add a storage facility, house, or garage")
                         )
-                        .padding(.top, 60)
+                        .padding(.top, 40)
+                    } else {
+                        ForEach(groupedLocations, id: \.0) { type, locations in
+                            VStack(alignment: .leading, spacing: 10) {
+                                // Section header
+                                HStack {
+                                    Image(systemName: type.iconName)
+                                        .foregroundStyle(Color.accentColor)
+                                    Text(type.displayName)
+                                        .font(.headline)
+                                }
+                                .padding(.horizontal)
+
+                                // 2-column grid
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible(), spacing: 12),
+                                    GridItem(.flexible(), spacing: 12)
+                                ], spacing: 12) {
+                                    ForEach(locations) { location in
+                                        NavigationLink(destination: LocationDetailView(location: location)) {
+                                            LocationCard(location: location, isSelected: false, spaceCount: 0)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
                     }
                 }
                 .padding(.top, 8)
+                .padding(.bottom, 80)
             }
-            .navigationTitle("What's In The Box?")
+            .navigationTitle("Locations")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { showMenu = true } label: {
@@ -252,31 +255,32 @@ struct LocationCard: View {
     let spaceCount: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: location.displayIcon)
-                    .font(.title3)
-                    .foregroundStyle(isSelected ? .white : Color.accentColor)
+                    .font(.title2)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(isSelected ? .white.opacity(0.5) : .tertiary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            Spacer()
+
             Text(location.name)
-                .font(.caption.bold())
-                .lineLimit(1)
-            Text(location.locationType.displayName)
-                .font(.caption2)
-                .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
+                .font(.subheadline.bold())
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            if let addr = location.address, !addr.isEmpty {
+                Text(addr)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
         }
-        .padding(12)
-        .frame(width: 140, height: 90)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(isSelected ? Color.accentColor : Color(.secondarySystemGroupedBackground))
-        )
-        .foregroundStyle(isSelected ? .white : .primary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 
